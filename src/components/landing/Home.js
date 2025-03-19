@@ -31,7 +31,7 @@ const Home = () => {
             style={{ display: "flex", justifyContent: "center" }}
           >
             <Link
-              to={token ? "/dashboard" : "/register"}
+              to={token ? "/dashboard" : "/signup"}
               className="button_start"
             >
               {token ? "Go to Dashboard" : "Get Started"}
@@ -64,7 +64,7 @@ const Home = () => {
               without financial risk
             </p>
             <Link
-              to={token ? "/dashboard" : "/register"}
+              to={token ? "/dashboard" : "/signup"}
               className="button_start"
               style={{ marginTop: "10px", marginLeft: "10px" }}
             >
@@ -87,7 +87,7 @@ const Home = () => {
               insights based on market trends
             </p>
             <Link
-              to={token ? "/dashboard" : "/register"}
+              to={token ? "/dashboard" : "/signup"}
               className="button_start"
               style={{ marginTop: "10px", marginLeft: "470px" }}
             >
