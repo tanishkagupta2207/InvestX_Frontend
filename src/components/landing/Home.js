@@ -10,6 +10,7 @@ const Home = () => {
 
   return (
     <>
+    <div style={{'paddingTop': '3.5rem'}}></div>
       <NavBar />
       <div className="container_1">
         <section>
