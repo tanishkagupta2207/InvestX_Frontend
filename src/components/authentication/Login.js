@@ -102,6 +102,7 @@ const Login = (props) => {
                 name="password"
                 onChange={onChange}
                 value={credentials.password}
+                aria-describedby="passwordHelpBlock"
                 className="form-control"
                 placeholder="Please pick a strong password"
                 required

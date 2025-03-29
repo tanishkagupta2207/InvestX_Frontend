@@ -4,25 +4,27 @@ import img1 from "../../assets/background_auth.jpeg";
 
 const Signup = (props) => {
   const [credentials, setCredentials] = useState({
+    userName: "",
     name: "",
     email: "",
     password: "",
     cpassword: "",
+    profileType: "Public",
   });
   let navigate = useNavigate();
   const [isPublic, setIsPublic] = useState(true);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+    credentials.profileType = isPublic ? "Public" : "Private";
     if (credentials.password !== credentials.cpassword) {
       props.showAlert("Password and Confirm Password do not match!", "danger");
       return;
     }
-  
+
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_HOST_URL}api/auth/createUser`,
+        `${process.env.REACT_APP_HOST_URL}api/auth/register`,
         {
           method: "POST",
           headers: {
@@ -31,26 +33,27 @@ const Signup = (props) => {
           body: JSON.stringify(credentials),
         }
       );
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-  
+
       const res = await response.json();
-  
+
       if (res.success) {
         localStorage.setItem("token", res.authToken);
         props.showAlert("Account created successfully!", "success");
         navigate("/dashboard");
       } else {
-        props.showAlert(res.msg || (res.errors && res.errors[0]?.msg) || "An error occurred", "danger");
+        props.showAlert(
+          res.msg || (res.errors && res.errors[0]?.msg) || "An error occurred",
+          "danger"
+        );
       }
     } catch (error) {
       console.error("Error creating account:", error);
-      props.showAlert("Something went wrong! Please try again later.", "danger");
+      props.showAlert(
+        "Something went wrong! Please try again later.",
+        "danger"
+      );
     }
   };
-  
 
   const onChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -97,6 +100,21 @@ const Signup = (props) => {
               />
             </div>
             <div className="mb-3">
+              <label className="form-label text-light" htmlFor="userName">
+                UserName<span className="text-danger">*</span>
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                id="userName"
+                name="userName"
+                onChange={onChange}
+                value={credentials.userName}
+                placeholder="UserName"
+                required
+              />
+            </div>
+            <div className="mb-3">
               <label className="form-label text-light" htmlFor="email">
                 Email<span className="text-danger">*</span>
               </label>
@@ -121,6 +139,7 @@ const Signup = (props) => {
                 name="password"
                 onChange={onChange}
                 value={credentials.password}
+                aria-describedby="passwordHelpBlock"
                 className="form-control"
                 placeholder="Please pick a strong password"
                 required
@@ -136,6 +155,7 @@ const Signup = (props) => {
                 name="cpassword"
                 onChange={onChange}
                 value={credentials.cpassword}
+                aria-describedby="passwordHelpBlock"
                 className="form-control"
                 placeholder="Please retype password"
                 required

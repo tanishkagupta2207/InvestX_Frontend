@@ -6,7 +6,7 @@ import NavBar from "../NavBar";
 import img2 from "../../assets/home_img2.webp";
 
 const Home = () => {
-  const token = JSON.parse(localStorage.getItem("token"));
+  const token = localStorage.getItem("token");
 
   return (
     <>
@@ -112,14 +112,14 @@ const Home = () => {
         </section>
 
         <footer>                                      {/* TODO */}
-          <div class="footer-container">
-            <div class="footer-section social">
+          <div className="footer-container">
+            <div className="footer-section social">
               <h2>Follow Us</h2>
               <a href="/">Facebook </a> | <a href="/"> Twitter </a> |
               <a href="/"> Instagram</a>
             </div>
           </div>
-          <div class="footer-bottom">
+          <div className="footer-bottom">
             <p>&copy; 2025 YourWebsite. All Rights Reserved.</p>
           </div>
         </footer>
