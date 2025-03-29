@@ -1,10 +1,11 @@
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { useState } from "react";
-import Home from "./components/landing/Home";
+import Home from "./components/Home/Home";
 import Signup from "./components/authentication/Signup";
 import Login from "./components/authentication/Login";
 import Alert from "./components/Alert";
+import Dashboard from "./components/landing/Dashboard";
 
 function App() {
 
@@ -29,6 +30,7 @@ function App() {
               {/* <Route exact path="/about" element={<About />} /> */}
               <Route exact path="/login" element={<Login showAlert={showAlert}/>} />
               <Route exact path="/signup" element={<Signup showAlert={showAlert}/>} />
+              <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
             </Routes>
           </div>
         </Router>

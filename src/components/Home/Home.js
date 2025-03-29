@@ -90,7 +90,7 @@ const Home = () => {
             <Link
               to={token ? "/dashboard" : "/signup"}
               className="button_start"
-              style={{ marginTop: "10px", marginLeft: "470px" }}
+              style={{ marginTop: "10px", marginLeft: "445px" }}
             >
               {token ? "Go to Dashboard" : "Get Started"}
             </Link>
