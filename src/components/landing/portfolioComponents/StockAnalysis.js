@@ -170,7 +170,7 @@ const StockAnalysis = () => {
 
   return (
     <div>
-        <h1 className="text-light" style={{ textAlign: "center", marginBottom: "20px" }}>Stock Analysis</h1>
+        <h1 className="text-light" style={{ textAlign: "center", marginBottom: "20px" }}>Stock Holdings Analysis</h1>
       <div
         className="row g-3"
         style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}

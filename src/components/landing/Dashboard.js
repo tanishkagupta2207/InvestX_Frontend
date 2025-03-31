@@ -1,8 +1,11 @@
 import React from "react";
 import { useEffect } from "react";
 import SideBar from "../SideBar";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 import StockAnalysis from "./portfolioComponents/StockAnalysis";
 import AssetCards from "./portfolioComponents/AssetCards";
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const Dashboard = () => {
   const token = localStorage.getItem("token");
@@ -23,7 +26,7 @@ const Dashboard = () => {
       >
         <div className="container-fluid text-light">
           <h1 className="mb-4" style={{ textAlign: "center" }}>
-            Portfolio Overview
+            Total Portfolio Overview
           </h1>
 
           <AssetCards />

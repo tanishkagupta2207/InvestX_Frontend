@@ -207,6 +207,7 @@ const AssetCards = () => {
 
   return (
     <div className="row mb-4 g-3 align-items-stretch">
+
       <div className="col-lg-6">
         <div className="card bg-dark border-secondary h-100">
           <div className="card-body text-light d-flex">
@@ -256,10 +257,10 @@ const AssetCards = () => {
           </div>
         </div>
       </div>
+
       <div className="col-lg-6" style={{ width: "578px", height: "372px" }}>
-        {/* First row for Total Portfolio Value and Total Cash Held */}
+
         <div className="row g-3" style={{ marginTop: "0px" }}>
-          {/* Total Portfolio Value Card */}
 
           <div className="col-md-6" style={{ height: "180px", margin: "0px" }}>
             <div className="card bg-dark border-secondary h-100">
@@ -283,7 +284,6 @@ const AssetCards = () => {
             </div>
           </div>
 
-          {/* Total Cash Held Card */}
           <div className="col-md-6" style={{ margin: "0px" }}>
             <div className="card bg-dark border-secondary h-100">
               <div className="card-body">
@@ -295,25 +295,23 @@ const AssetCards = () => {
               </div>
             </div>
           </div>
+
         </div>
 
-        {/* Second row for Total Bonds Value and Total Stocks Value */}
         <div className="row g-3 mt-3">
-          {/* Total Bonds Value Card */}
+
           <div className="col-md-6" style={{ height: "180px", margin: "0px" }}>
             <div className="card bg-dark border-secondary h-100">
               <div className="card-body">
                 <h5 className="card-title text-white-50">Total Bonds Value</h5>
                 <p className="card-text display-6 fw-bold text-light">
-                <HiOutlineCurrencyRupee />{cashHeld}{" "}
-                  {/* Replace with actual bonds value if available */}
+                <HiOutlineCurrencyRupee />{0}{" "}  {/** TODO */}
                 </p>
                 <p className="card-text text-muted">&nbsp;</p>
               </div>
             </div>
           </div>
 
-          {/* Total Stocks Value Card */}
           <div className="col-md-6" style={{ margin: "0px" }}>
             <div className="card bg-dark border-secondary h-100">
               <div className="card-body">
@@ -322,13 +320,14 @@ const AssetCards = () => {
                     className="card-text display-6 fw-bold text-light"
                   >
                     <HiOutlineCurrencyRupee />{calculateTotal(portfolioData.stocks)}{" "}
-                    {/* Calculate stocks value */}
                   </p>
                 <p className="card-text text-muted">&nbsp;</p>
               </div>
             </div>
           </div>
+
         </div>
+        
       </div>
     </div>
   );
