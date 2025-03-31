@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import "./Home.css";
 import img1 from "../../assets/img1.webp";
-import NavBar from "../NavBar";
+import NavBar from "./NavBar";
 import img2 from "../../assets/home_img2.webp";
 
 const Home = () => {
