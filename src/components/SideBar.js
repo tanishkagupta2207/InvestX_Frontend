@@ -61,7 +61,7 @@ const SideBar = () => {
       </div>
 
       <nav className="nav flex-column gap-2">
-        <NavLink className="nav-link link-light d-flex align-items-center" to="/">
+        <NavLink className="nav-link link-light d-flex align-items-center" to="/dashboard">
           <IoHomeOutline className="me-2" /> Home
         </NavLink>
         <NavLink className="nav-link link-light d-flex align-items-center" to="/events?filter=total">
