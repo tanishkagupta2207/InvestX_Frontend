@@ -1,11 +1,11 @@
 import React from "react";
 import { useEffect } from "react";
 import SideBar from "../SideBar";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, registerables  } from "chart.js";
 import StockAnalysis from "./portfolioComponents/StockAnalysis";
 import AssetCards from "./portfolioComponents/AssetCards";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, ...registerables);
 
 const Dashboard = () => {
   const token = localStorage.getItem("token");

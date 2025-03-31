@@ -24,6 +24,7 @@ const portfolioData = {
       symbol: "AAPL",
       quantity: 10,
       average_price: 150,
+      currentPrice: 200,
     },
     {
       id: 2,
@@ -31,6 +32,7 @@ const portfolioData = {
       symbol: "AMZN",
       quantity: 10,
       average_price: 300,
+      currentPrice: 200,
     },
     {
       id: 3,
@@ -38,6 +40,7 @@ const portfolioData = {
       symbol: "MSFT",
       quantity: 12,
       average_price: 400,
+      currentPrice: 100,
     },
     {
       id: 4,
@@ -45,6 +48,7 @@ const portfolioData = {
       symbol: "GOOGL",
       quantity: 16,
       average_price: 460,
+      currentPrice: 450,
     },
     {
       id: 5,
@@ -52,6 +56,7 @@ const portfolioData = {
       symbol: "AAPL",
       quantity: 10,
       average_price: 150,
+      currentPrice: 200,
     },
     {
       id: 6,
@@ -59,6 +64,7 @@ const portfolioData = {
       symbol: "AMZN",
       quantity: 10,
       average_price: 300,
+      currentPrice: 200,
     },
     {
       id: 7,
@@ -66,6 +72,7 @@ const portfolioData = {
       symbol: "MSFT",
       quantity: 12,
       average_price: 400,
+      currentPrice: 200,
     },
     {
       id: 8,
@@ -73,6 +80,7 @@ const portfolioData = {
       symbol: "GOOGL",
       quantity: 16,
       average_price: 460,
+      currentPrice: 200,
     },
     {
       id: 9,
@@ -80,6 +88,7 @@ const portfolioData = {
       symbol: "AAPL",
       quantity: 10,
       average_price: 150,
+      currentPrice: 200,
     },
     {
       id: 10,
@@ -87,6 +96,7 @@ const portfolioData = {
       symbol: "AMZN",
       quantity: 10,
       average_price: 300,
+      currentPrice: 200,
     },
     {
       id: 11,
@@ -94,6 +104,7 @@ const portfolioData = {
       symbol: "MSFT",
       quantity: 12,
       average_price: 400,
+      currentPrice: 200,
     },
     {
       id: 12,
@@ -101,6 +112,7 @@ const portfolioData = {
       symbol: "GOOGL",
       quantity: 16,
       average_price: 460,
+      currentPrice: 200,
     },
     {
       id: 13,
@@ -108,6 +120,7 @@ const portfolioData = {
       symbol: "AAPL",
       quantity: 10,
       average_price: 150,
+      currentPrice: 200,
     },
     {
       id: 14,
@@ -115,6 +128,7 @@ const portfolioData = {
       symbol: "AMZN",
       quantity: 10,
       average_price: 300,
+      currentPrice: 200,
     },
     {
       id: 15,
@@ -122,6 +136,7 @@ const portfolioData = {
       symbol: "MSFT",
       quantity: 12,
       average_price: 400,
+      currentPrice: 200,
     },
     {
       id: 16,
@@ -129,6 +144,7 @@ const portfolioData = {
       symbol: "GOOGL",
       quantity: 16,
       average_price: 460,
+      currentPrice: 200,
     },
   ],
   Balance: 10000,
@@ -136,8 +152,9 @@ const portfolioData = {
 
 const AssetCards = () => {
   const [totalValue, setTotalValue] = useState(0);
-  const { todayChange, todayChangePercent } = 0;
-  const isPositiveChange = todayChange >= 0;
+  
+  const [totalProfit, setTotalProfit] = useState(0);
+  const isPositiveChange = totalProfit >= 0;
   const cashHeld = portfolioData.Balance;
   const stockLabels = portfolioData.stocks.map((stock) => stock.name);
 
@@ -171,15 +188,12 @@ const AssetCards = () => {
       },
     ],
   };
+
   const options = {
     responsive: true,
     plugins: {
       legend: {
         position: "right",
-      },
-      title: {
-        display: true,
-        text: "Stock Portfolio Allocation",
       },
     },
   };
@@ -187,14 +201,23 @@ const AssetCards = () => {
   const calculateTotal = useCallback((stocks) => {
     let total = 0;
     stocks.forEach((stock) => {
-      total += stock.quantity * stock.average_price;
+      total += stock.quantity * stock.currentPrice;
     });
     return total;
   }, []);
 
+  const calculateTotalProfit = useCallback((stocks) => {
+      let total = 0;
+      stocks.forEach((stock) => {
+        total += (stock.currentPrice - stock.average_price) * stock.quantity;
+      });
+      return total;
+    }, []);
+
   useEffect(() => {
+    setTotalProfit(calculateTotalProfit(portfolioData?.stocks || []));
     setTotalValue(calculateTotal(portfolioData?.stocks || []) + cashHeld);
-  }, [cashHeld, calculateTotal]);
+  }, [cashHeld, calculateTotal, calculateTotalProfit]);
 
   const PieChartPlaceholder = () => (
     <div
@@ -277,8 +300,7 @@ const AssetCards = () => {
                   }`}
                 >
                   {isPositiveChange ? "+" : ""}
-                  {todayChange} ({isPositiveChange ? "+" : ""}
-                  {todayChangePercent}%) Today
+                  <HiOutlineCurrencyRupee />{totalProfit} {isPositiveChange ? "+" : ""} Today
                 </p>
               </div>
             </div>
@@ -299,20 +321,8 @@ const AssetCards = () => {
         </div>
 
         <div className="row g-3 mt-3">
-
-          <div className="col-md-6" style={{ height: "180px", margin: "0px" }}>
-            <div className="card bg-dark border-secondary h-100">
-              <div className="card-body">
-                <h5 className="card-title text-white-50">Total Bonds Value</h5>
-                <p className="card-text display-6 fw-bold text-light">
-                <HiOutlineCurrencyRupee />{0}{" "}  {/** TODO */}
-                </p>
-                <p className="card-text text-muted">&nbsp;</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="col-md-6" style={{ margin: "0px" }}>
+        
+        <div className="col-md-6" style={{ margin: "0px" }}>
             <div className="card bg-dark border-secondary h-100">
               <div className="card-body">
                 <h5 className="card-title text-white-50">Total Stocks Value</h5>
@@ -321,6 +331,25 @@ const AssetCards = () => {
                   >
                     <HiOutlineCurrencyRupee />{calculateTotal(portfolioData.stocks)}{" "}
                   </p>
+                  <p
+                  className={`card-text ${
+                    isPositiveChange ? "text-success" : "text-danger"
+                  }`}
+                >
+                  {isPositiveChange ? "+" : ""}
+                  <HiOutlineCurrencyRupee />{totalProfit} {isPositiveChange ? "+" : ""} Today
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-6" style={{ height: "180px", margin: "0px" }}>
+            <div className="card bg-dark border-secondary h-100">
+              <div className="card-body">
+                <h5 className="card-title text-white-50">Total Bonds Value</h5>
+                <p className="card-text display-6 fw-bold text-light">
+                <HiOutlineCurrencyRupee />{0}{" "}  {/** TODO */}
+                </p>
                 <p className="card-text text-muted">&nbsp;</p>
               </div>
             </div>
