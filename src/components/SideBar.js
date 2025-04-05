@@ -64,7 +64,7 @@ const SideBar = () => {
         <NavLink className="nav-link link-light d-flex align-items-center" to="/dashboard">
           <IoHomeOutline className="me-2" /> Home
         </NavLink>
-        <NavLink className="nav-link link-light d-flex align-items-center" to="/events?filter=total">
+        <NavLink className="nav-link link-light d-flex align-items-center" to="/trade">
           <AiOutlineStock  className="me-2" /> Trade
         </NavLink>
         <NavLink className="nav-link link-light d-flex align-items-center" to="/invities">

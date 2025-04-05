@@ -6,6 +6,7 @@ import Signup from "./components/authentication/Signup";
 import Login from "./components/authentication/Login";
 import Alert from "./components/Alert";
 import Dashboard from "./components/landing/Dashboard";
+import TradePage from "./components/pages/TradePage";
 
 function App() {
 
@@ -31,6 +32,7 @@ function App() {
               <Route exact path="/login" element={<Login showAlert={showAlert}/>} />
               <Route exact path="/signup" element={<Signup showAlert={showAlert}/>} />
               <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
+              <Route exact path="/trade" element={<TradePage showAlert={showAlert}/>} />
             </Routes>
           </div>
         </Router>
