@@ -2,274 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import Chart from "react-apexcharts";
 import SideBar from "../SideBar";
 
-// --- Hardcoded Initial/Fallback Data ---
-const rawApiStockDataAAPL = [
-  {
-    _id: "67efea93ffd2bf0009c264ad",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-03T14:30:00.000Z",
-    __v: 0,
-    close_price: 238.02999877929688,
-    granularity: "daily",
-    high_price: 244.02999877929688,
-    low_price: 236.11000061035156,
-    open_price: 241.7899932861328,
-    volume: 47184000,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264ae",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-04T14:30:00.000Z",
-    __v: 0,
-    close_price: 235.92999267578125,
-    granularity: "daily",
-    high_price: 240.07000732421875,
-    low_price: 234.67999267578125,
-    open_price: 237.7100067138672,
-    volume: 53798100,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264af",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-05T14:30:00.000Z",
-    __v: 0,
-    close_price: 235.74000549316406,
-    granularity: "daily",
-    high_price: 236.5500030517578,
-    low_price: 229.22999572753906,
-    open_price: 235.4199981689453,
-    volume: 47227600,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b0",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-06T14:30:00.000Z",
-    __v: 0,
-    close_price: 235.3300018310547,
-    granularity: "daily",
-    high_price: 237.86000061035156,
-    low_price: 233.16000366210938,
-    open_price: 234.44000244140625,
-    volume: 45170400,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b1",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-07T14:30:00.000Z",
-    __v: 0,
-    close_price: 239.07000732421875,
-    granularity: "daily",
-    high_price: 241.3699951171875,
-    low_price: 234.75999450683594,
-    open_price: 235.11000061035156,
-    volume: 46273600,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b2",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-10T13:30:00.000Z",
-    __v: 0,
-    close_price: 227.47999572753906,
-    granularity: "daily",
-    high_price: 236.16000366210938,
-    low_price: 224.22000122070312,
-    open_price: 235.5399932861328,
-    volume: 72071200,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b3",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-11T13:30:00.000Z",
-    __v: 0,
-    close_price: 220.83999633789062,
-    granularity: "daily",
-    high_price: 225.83999633789062,
-    low_price: 217.4499969482422,
-    open_price: 223.80999755859375,
-    volume: 76137400,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b4",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-12T13:30:00.000Z",
-    __v: 0,
-    close_price: 216.97999572753906,
-    granularity: "daily",
-    high_price: 221.75,
-    low_price: 214.91000366210938,
-    open_price: 220.13999938964844,
-    volume: 62547500,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b5",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-13T13:30:00.000Z",
-    __v: 0,
-    close_price: 209.67999267578125,
-    granularity: "daily",
-    high_price: 216.83999633789062,
-    low_price: 208.4199981689453,
-    open_price: 215.9499969482422,
-    volume: 61368300,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b6",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-14T13:30:00.000Z",
-    __v: 0,
-    close_price: 213.49000549316406,
-    granularity: "daily",
-    high_price: 213.9499969482422,
-    low_price: 209.5800018310547,
-    open_price: 211.25,
-    volume: 60107600,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b7",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-17T13:30:00.000Z",
-    __v: 0,
-    close_price: 214,
-    granularity: "daily",
-    high_price: 215.22000122070312,
-    low_price: 209.97000122070312,
-    open_price: 213.30999755859375,
-    volume: 48073400,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b8",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-18T13:30:00.000Z",
-    __v: 0,
-    close_price: 212.69000244140625,
-    granularity: "daily",
-    high_price: 215.14999389648438,
-    low_price: 211.49000549316406,
-    open_price: 214.16000366210938,
-    volume: 42432400,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264b9",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-19T13:30:00.000Z",
-    __v: 0,
-    close_price: 215.24000549316406,
-    granularity: "daily",
-    high_price: 218.75999450683594,
-    low_price: 213.75,
-    open_price: 214.22000122070312,
-    volume: 54385400,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264ba",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-20T13:30:00.000Z",
-    __v: 0,
-    close_price: 214.10000610351562,
-    granularity: "daily",
-    high_price: 217.49000549316406,
-    low_price: 212.22000122070312,
-    open_price: 213.99000549316406,
-    volume: 48862900,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264bb",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-21T13:30:00.000Z",
-    __v: 0,
-    close_price: 218.27000427246094,
-    granularity: "daily",
-    high_price: 218.83999633789062,
-    low_price: 211.27999877929688,
-    open_price: 211.55999755859375,
-    volume: 94127800,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264bc",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-24T13:30:00.000Z",
-    __v: 0,
-    close_price: 220.72999572753906,
-    granularity: "daily",
-    high_price: 221.47999572753906,
-    low_price: 218.5800018310547,
-    open_price: 221,
-    volume: 44299500,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264bd",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-25T13:30:00.000Z",
-    __v: 0,
-    close_price: 223.75,
-    granularity: "daily",
-    high_price: 224.10000610351562,
-    low_price: 220.0800018310547,
-    open_price: 220.77000427246094,
-    volume: 34493600,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264be",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-26T13:30:00.000Z",
-    __v: 0,
-    close_price: 221.52999877929688,
-    granularity: "daily",
-    high_price: 225.02000427246094,
-    low_price: 220.47000122070312,
-    open_price: 223.50999450683594,
-    volume: 34466100,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264bf",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-27T13:30:00.000Z",
-    __v: 0,
-    close_price: 223.85000610351562,
-    granularity: "daily",
-    high_price: 224.99000549316406,
-    low_price: 220.55999755859375,
-    open_price: 221.38999938964844,
-    volume: 37094800,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264c0",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-28T13:30:00.000Z",
-    __v: 0,
-    close_price: 217.89999389648438,
-    granularity: "daily",
-    high_price: 223.80999755859375,
-    low_price: 217.67999267578125,
-    open_price: 221.6699981689453,
-    volume: 39818600,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264c1",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-03-31T13:30:00.000Z",
-    __v: 0,
-    close_price: 222.1300048828125,
-    granularity: "daily",
-    high_price: 225.6199951171875,
-    low_price: 216.22999572753906,
-    open_price: 217.00999450683594,
-    volume: 65299300,
-  },
-  {
-    _id: "67efea93ffd2bf0009c264c2",
-    company_id: "67ec1a559f4fc60929429638",
-    date: "2025-04-01T13:30:00.000Z",
-    __v: 0,
-    close_price: 223.19000244140625,
-    granularity: "daily",
-    high_price: 223.67999267578125,
-    low_price: 218.89999389648438,
-    open_price: 219.80999755859375,
-    volume: 36412700,
-  },
-];
-
 // --- Helper Function to Format API Data ---
 const formatApiDataForChart = (apiData) => {
   // (Keep the same formatting function as the previous example)
@@ -285,37 +17,6 @@ const formatApiDataForChart = (apiData) => {
         typeof item.close_price === "number" ? item.close_price : null,
       ],
     }));
-};
-
-// --- MOCK API Data Generation ---
-const generateIntradayPoint = (lastPrice) => {
-  const change = (Math.random() - 0.5) * 0.5;
-  const open = lastPrice + change;
-  const close = open + (Math.random() - 0.5) * 0.3;
-  const high = Math.max(open, close) + Math.random() * 0.2;
-  const low = Math.min(open, close) - Math.random() * 0.2;
-  return { open, high, low, close };
-};
-const generateMockIntradayData = (numPoints, intervalMinutes, basePrice) => {
-  const data = [];
-  let lastClose = basePrice + (Math.random() - 0.5);
-  let currentTime = new Date();
-  currentTime.setMinutes(
-    currentTime.getMinutes() - numPoints * intervalMinutes
-  );
-  for (let i = 0; i < numPoints; i++) {
-    const { open, high, low, close } = generateIntradayPoint(lastClose);
-    data.push({
-      date: new Date(currentTime.getTime()).toISOString(),
-      open_price: parseFloat(open.toFixed(2)),
-      high_price: parseFloat(high.toFixed(2)),
-      low_price: parseFloat(low.toFixed(2)),
-      close_price: parseFloat(close.toFixed(2)),
-    });
-    lastClose = close;
-    currentTime.setMinutes(currentTime.getMinutes() + intervalMinutes);
-  }
-  return data;
 };
 
 // --- Actual StockChart component ---
@@ -448,65 +149,57 @@ const StockChart = ({ stockData, simplifyGraph }) => {
 };
 
 // --- ChartWrapper component ---
-const ChartWrapper = ({ stockSymbol, stockName }) => {
+const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
   const [simplifyGraph, setSimplifyGraph] = useState(false);
   const [chartData, setChartData] = useState([]);
   const [selectedRange, setSelectedRange] = useState("1Y");
   const [isLoading, setIsLoading] = useState(false);
   const availableRanges = ["1D", "5D", "1M", "6M", "1Y", "2Y"];
 
-  const fetchChartData = useCallback(async (symbol, range) => {
-    console.log(`Workspaceing data for ${symbol} range ${range}`);
+  const fetchChartData = useCallback(async (symbol, range, company_id) => {
     setIsLoading(true);
     setChartData([]);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    let mockApiData = { success: false, data: [] };
     try {
-      let basePrice = 100 + Math.random() * 200;
-      if (symbol === "AAPL" && ["1M", "6M", "1Y", "2Y"].includes(range)) {
-        const rangeMap = { "1M": 22, "6M": 130, "1Y": 252, "2Y": 504 };
-        const points = rangeMap[range] || rawApiStockDataAAPL.length;
-        mockApiData = {
-          success: true,
-          data: rawApiStockDataAAPL.slice(-points),
-        };
-      } else if (range === "1D") {
-        mockApiData = {
-          success: true,
-          data: generateMockIntradayData(390, 1, basePrice),
-        };
-      } else if (range === "5D") {
-        mockApiData = {
-          success: true,
-          data: generateMockIntradayData(390 * 5, 5, basePrice),
-        };
-      } else {
-        const rangeMap = { "1M": 22, "6M": 130, "1Y": 252, "2Y": 504 };
-        const points = rangeMap[range] || 252;
-        mockApiData = {
-          success: true,
-          data: generateMockIntradayData(points, 60 * 24, basePrice),
-        };
-      }
-      if (mockApiData.success) {
-        const formattedData = formatApiDataForChart(mockApiData.data);
+      const response = await fetch(
+        `${process.env.REACT_APP_HOST_URL}api/stock/data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": `${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ company_id: company_id, range: range }),
+        }
+      );
+      const res = await response.json();
+      if (res.success) {
+        const formattedData = formatApiDataForChart(res.data);
         setChartData(formattedData);
       } else {
-        throw new Error(mockApiData.message || "Failed to fetch mock data");
+        console.error(
+          `Error fetching data for ${symbol}: ${res.msg || res.errors[0]?.msg}`
+        );
+        showAlert(
+          res.msg || (res.errors && res.errors[0]?.msg) || "An error occurred",
+          "danger"
+        );
       }
     } catch (error) {
-      console.error(`Workspace error for ${symbol} (${range}):`, error);
-      setChartData([]);
+      console.error("Error fetching chart data:", error);
+      showAlert(
+        "Something went wrong! Please try again later.",
+        "danger"
+      );
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (stockSymbol) {
-      fetchChartData(stockSymbol, selectedRange);
+    if (company_id) {
+      fetchChartData(stockSymbol, selectedRange, company_id);
     }
-  }, [stockSymbol, selectedRange, fetchChartData, simplifyGraph]);
+  }, [company_id, selectedRange, fetchChartData, simplifyGraph]);
 
   const handleRangeChange = (newRange) => {
     setSelectedRange(newRange);
@@ -646,47 +339,9 @@ function TradePage(props) {
     }
   };
 
-//   const fetchStocksData = async () => {
-//     try {
-//       for (const company of stocksToDisplay) {
-//         const response = await fetch(
-//           `${process.env.REACT_APP_HOST_URL}api/stock/data`,
-//           {
-//             method: "GET",
-//             headers: {
-//               "Content-Type": "application/json",
-//               "auth-token": `${localStorage.getItem("token")}`,
-//             },
-//             body: {
-//                 company_id: company.company_id,
-//                 range: '1Y'
-//             },
-//           }
-//         );
-//         const res = await response.json();
-//         if (res.success) {
-//           setCategoriesData(res.data);
-//           setCategoryNames(Object.keys(res.data));
-//         } else {
-//           props.showAlert(
-//             res.msg ||
-//               (res.errors && res.errors[0]?.msg) ||
-//               "An error occurred",
-//             "danger"
-//           );
-//         }
-//       }
-//     } catch (error) {
-//       console.error("Error Fetching Details: ", error);
-//       props.showAlert(
-//         "Something went wrong! Please try again later.",
-//         "danger"
-//       );
-//     }
-//   };
-
   useEffect(() => {
     fetchCategoriesData();
+    // setStocksToDisplay(categoriesData[selectedCategory]);
   }, []);
 
   // Update stock list on category change
@@ -696,8 +351,7 @@ function TradePage(props) {
     } else {
       setStocksToDisplay([]);
     }
-    // fetchStocksData();
-  }, [selectedCategory]);
+  }, [selectedCategory, setStocksToDisplay, categoriesData]);
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -752,6 +406,8 @@ function TradePage(props) {
                   key={stock.symbol}
                   stockSymbol={stock.symbol}
                   stockName={stock.name}
+                  company_id={stock.company_id}
+                  showAlert={props.showAlert}
                 />
               ))
             : selectedCategory && (
