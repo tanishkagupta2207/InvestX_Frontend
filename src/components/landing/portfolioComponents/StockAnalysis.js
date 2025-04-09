@@ -7,7 +7,7 @@ const StockAnalysis = (props) => {
   const portfolioData = props.portfolioData;
   const availableColors = props.availableColors;
   const [totalValue, setTotalValue] = useState(0);
-  const minRows = 8;
+  const minRows = 7;
   const dataRows = portfolioData.stocks.length;
   const rowsToDisplay = Math.max(minRows, dataRows);
   const stockLabels = portfolioData.stocks.map((stock) => stock.name);
@@ -15,12 +15,12 @@ const StockAnalysis = (props) => {
   const [totalProfit, setTotalProfit] = useState(0);
 
   const stockValues = portfolioData.stocks.map(
-    (stock) => stock.quantity * stock.currentPrice
+    (stock) => stock.quantity * stock.current_price
   );
   const profitPercentages = portfolioData.stocks.map((stock) =>
     parseFloat(
       (
-        (((stock.currentPrice - stock.average_price) * stock.quantity) /
+        (((stock.current_price - stock.average_price) * stock.quantity) /
           Math.abs(totalProfit)) *
         100
       ).toFixed(2)
@@ -74,7 +74,7 @@ const StockAnalysis = (props) => {
   const calculateTotal = useCallback((stocks) => {
     let total = 0;
     stocks.forEach((stock) => {
-      total += stock.quantity * stock.currentPrice;
+      total += stock.quantity * stock.current_price;
     });
     return total;
   }, []);
@@ -82,8 +82,9 @@ const StockAnalysis = (props) => {
   const calculateTotalProfit = useCallback((stocks) => {
     let total = 0;
     stocks.forEach((stock) => {
-      total += (stock.currentPrice - stock.average_price) * stock.quantity;
+      total += (stock.current_price - stock.average_price) * stock.quantity;
     });
+    total = parseFloat(total.toFixed(4));
     return total;
   }, []);
 
@@ -188,28 +189,30 @@ const StockAnalysis = (props) => {
                       <td>{item.symbol}</td>
                       <td>{item.quantity}</td>
                       <td>{item.average_price}</td>
-                      <td>{item.currentPrice}</td>
-                      <td>{item.currentPrice * item.quantity}</td>
+                      <td>{item.current_price}</td>
+                      <td>{item.current_price * item.quantity}</td>
                       <td
                         className={`card-text ${
-                          item.currentPrice - item.average_price >= 0
+                          item.current_price - item.average_price >= 0
                             ? "text-success"
                             : "text-danger"
                         }`}
                       >
-                        {(item.currentPrice - item.average_price) *
-                          item.quantity}
+                        {parseFloat(
+                          (item.current_price - item.average_price) *
+                            item.quantity
+                        ).toFixed(4)}
                       </td>
                       <td
                         className={`card-text ${
-                          item.currentPrice - item.average_price >= 0
+                          item.current_price - item.average_price >= 0
                             ? "text-success"
                             : "text-danger"
                         }`}
                       >
                         {parseFloat(
                           (
-                            (((item.currentPrice - item.average_price) *
+                            (((item.current_price - item.average_price) *
                               item.quantity) /
                               Math.abs(totalProfit)) *
                             100
@@ -246,20 +249,17 @@ const StockAnalysis = (props) => {
                         .slice(0, rowsToDisplay)
                         .reduce(
                           (total, item) =>
-                            total + item.currentPrice * item.quantity,
+                            total + item.current_price * item.quantity,
                           0
                         )}
                     </td>
-                    <td style={{ fontWeight: "bold" }}>
-                      {portfolioData.stocks
-                        .slice(0, rowsToDisplay)
-                        .reduce(
-                          (total, item) =>
-                            total +
-                            (item.currentPrice - item.average_price) *
-                              item.quantity,
-                          0
-                        )}
+                    <td
+                      style={{ fontWeight: "bold" }}
+                      className={`card-text ${
+                        totalProfit >= 0 ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {totalProfit}
                     </td>
                   </tr>
                 </tbody>

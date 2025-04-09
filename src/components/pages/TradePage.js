@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Chart from "react-apexcharts";
 import SideBar from "../SideBar";
+import { useNavigate } from "react-router-dom";
 
 // --- Helper Function to Format API Data ---
 const formatApiDataForChart = (apiData) => {
@@ -107,7 +108,7 @@ const StockChart = ({ stockData, simplifyGraph }) => {
           const point =
             w.globals.initialSeries[seriesIndex]?.data[dataPointIndex];
           if (point && Array.isArray(point.y) && point.y.length === 4) {
-            const [open, high, low, close] = point.y;
+            // const [open, high, low, close] = point.y;
             // You could format this differently if needed, but default usually shows OHLC
             // This formatter primarily helps ensure the line chart doesn't error
             // Let's return the close price formatted for consistency if needed,
@@ -150,56 +151,63 @@ const StockChart = ({ stockData, simplifyGraph }) => {
 
 // --- ChartWrapper component ---
 const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
+  const navigate = useNavigate();
   const [simplifyGraph, setSimplifyGraph] = useState(false);
   const [chartData, setChartData] = useState([]);
   const [selectedRange, setSelectedRange] = useState("1Y");
   const [isLoading, setIsLoading] = useState(false);
   const availableRanges = ["1D", "5D", "1M", "6M", "1Y", "2Y"];
+  const [isWatchlistLoading, setIsWatchlistLoading] = useState(false);
+  const [watchlistMessage, setWatchlistMessage] = useState(""); // For success/error feedback
 
-  const fetchChartData = useCallback(async (symbol, range, company_id) => {
-    setIsLoading(true);
-    setChartData([]);
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_HOST_URL}api/stock/data`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "auth-token": `${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ company_id: company_id, range: range }),
+  const fetchChartData = useCallback(
+    async (symbol, range, company_id) => {
+      setIsLoading(true);
+      setChartData([]);
+      try {
+        const response = await fetch(
+          `${process.env.REACT_APP_HOST_URL}api/stock/data`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "auth-token": `${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({ company_id: company_id, range: range }),
+          }
+        );
+        const res = await response.json();
+        if (res.success) {
+          const formattedData = formatApiDataForChart(res.data);
+          setChartData(formattedData);
+        } else {
+          console.error(
+            `Error fetching data for ${symbol}: ${
+              res.msg || res.errors[0]?.msg
+            }`
+          );
+          showAlert(
+            res.msg ||
+              (res.errors && res.errors[0]?.msg) ||
+              "An error occurred",
+            "danger"
+          );
         }
-      );
-      const res = await response.json();
-      if (res.success) {
-        const formattedData = formatApiDataForChart(res.data);
-        setChartData(formattedData);
-      } else {
-        console.error(
-          `Error fetching data for ${symbol}: ${res.msg || res.errors[0]?.msg}`
-        );
-        showAlert(
-          res.msg || (res.errors && res.errors[0]?.msg) || "An error occurred",
-          "danger"
-        );
+      } catch (error) {
+        console.error("Error fetching chart data:", error);
+        showAlert("Something went wrong! Please try again later.", "danger");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching chart data:", error);
-      showAlert(
-        "Something went wrong! Please try again later.",
-        "danger"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
     if (company_id) {
       fetchChartData(stockSymbol, selectedRange, company_id);
     }
-  }, [company_id, selectedRange, fetchChartData, simplifyGraph]);
+  }, [company_id, selectedRange, fetchChartData, simplifyGraph, stockSymbol]);
 
   const handleRangeChange = (newRange) => {
     setSelectedRange(newRange);
@@ -209,6 +217,75 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
     setSimplifyGraph(event.target.checked);
   };
 
+  const handleTradeAction = (action) => {
+    if (!company_id) {
+      console.error(
+        "Cannot initiate trade: companyId is missing for",
+        stockSymbol
+      );
+      // Optionally show an error to the user
+      showAlert("Unable to initiate trade. Please try again later.", "danger");
+      return;
+    }
+    console.log(
+      `Navigating to /trade for ${action} ${stockSymbol} (${company_id})`
+    );
+    navigate("/trade/action", {
+      state: {
+        action: action, // 'BUY' or 'SELL'
+        // Pass company details needed by the TradeForm
+        company: {
+          symbol: stockSymbol,
+          name: stockName,
+          companyId: company_id,
+          // You might want to pass the latest price fetched by fetchChartData if available
+        },
+      },
+    });
+  };
+
+  const handleAddToWatchlist = async () => {
+    if (!company_id) {
+      console.error(
+        "Cannot add to watchlist: company_id is missing for",
+        stockSymbol
+      );
+      setWatchlistMessage("Error: Company ID missing.");
+      return;
+    }
+    setIsWatchlistLoading(true);
+    setWatchlistMessage(""); // Clear previous message
+    console.log(
+      `Attempting to add ${stockSymbol} (ID: ${company_id}) to watchlist...`
+    );
+
+    // --- Simulate API Call ---
+    try {
+      // Replace with your actual API call:
+      // const response = await fetch('/api/watchlist', {
+      //     method: 'POST',
+      //     headers: { 'Content-Type': 'application/json', /* Auth */ },
+      //     body: JSON.stringify({ companyId: companyId }) // Send ID
+      // });
+      // const result = await response.json();
+      // if (!response.ok || !result.success) {
+      //     throw new Error(result.error || 'Failed to add to watchlist.');
+      // }
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
+      console.log(`${stockSymbol} added to watchlist (Simulated)`);
+      // Set success message (could clear after a few seconds)
+      setWatchlistMessage(`${stockSymbol} added to WatchList!`);
+      setTimeout(() => setWatchlistMessage(""), 3000); // Clear message after 3s
+    } catch (error) {
+      console.error("Failed to add to watchlist:", error);
+      setWatchlistMessage(`Error: ${error.message}`);
+      // Don't auto-clear error message
+    } finally {
+      setIsWatchlistLoading(false);
+    }
+    // --- End Simulation ---
+  };
+
   return (
     <div className="col-12 mb-4">
       <div className="card bg-dark border-secondary h-100">
@@ -216,6 +293,31 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
           <h5 className="mb-0 text-white">
             {stockName} ({stockSymbol})
           </h5>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-info"
+            style={{ marginRight: "auto" }}
+            onClick={handleAddToWatchlist}
+            disabled={isWatchlistLoading || isLoading}
+            title="Add to Watchlist"
+          >
+            {isWatchlistLoading ? (
+              // Show spinner and visually hidden text when loading
+              <>
+                <span
+                  className="spinner-border spinner-border-sm"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                <span className="visually-hidden ms-1">Adding...</span>
+              </>
+            ) : (
+              // Show button text when not loading
+              "+ Watchlist"
+            )}
+          </button>
+          {watchlistMessage && ( <div className={`alert alert-${watchlistMessage.startsWith('Error') ? 'danger' : 'success'} py-1 px-3 m-2 mb-0 text-center small`} role="alert"> {watchlistMessage} </div> )}
+
           <div
             className="btn-group btn-group-sm flex-wrap"
             role="group"
@@ -295,6 +397,26 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
             </div>
           )}{" "}
         </div>{" "}
+        <div className="card-footer bg-dark border-secondary-subtle d-flex justify-content-end gap-2">
+          <button
+            type="button"
+            className="btn btn-success"
+            onClick={() => handleTradeAction("BUY")}
+            disabled={isLoading} // Disable if chart data is loading
+            aria-label={`Buy ${stockSymbol}`}
+          >
+            Buy
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => handleTradeAction("SELL")}
+            disabled={isLoading} // Disable if chart data is loading
+            aria-label={`Sell ${stockSymbol}`}
+          >
+            Sell
+          </button>
+        </div>
       </div>{" "}
     </div>
   );
@@ -306,8 +428,8 @@ function TradePage(props) {
   const [stocksToDisplay, setStocksToDisplay] = useState([]);
   const [categoriesData, setCategoriesData] = useState({});
   const [categoryNames, setCategoryNames] = useState([]);
+  
   // Categories/Stocks Data
-
   const fetchCategoriesData = async () => {
     try {
       const response = await fetch(
@@ -325,6 +447,7 @@ function TradePage(props) {
         setCategoriesData(res.data);
         setCategoryNames(Object.keys(res.data));
       } else {
+        console.error("Error fetching categories: ", res.msg || res.errors || "error");
         props.showAlert(
           res.msg || (res.errors && res.errors[0]?.msg) || "An error occurred",
           "danger"
@@ -340,8 +463,11 @@ function TradePage(props) {
   };
 
   useEffect(() => {
+    if(!localStorage.getItem("token")) {
+      window.location.href = "/";
+      return;
+    }
     fetchCategoriesData();
-    // setStocksToDisplay(categoriesData[selectedCategory]);
   }, []);
 
   // Update stock list on category change
@@ -360,7 +486,7 @@ function TradePage(props) {
   const mainContentStyle = {
     marginLeft: "280px",
     paddingLeft: "20px",
-    paddingRight: "20px",
+    paddingRight: "50px",
     width: "calc(100% - 280px)",
     boxSizing: "border-box",
     backgroundColor: "#212529",

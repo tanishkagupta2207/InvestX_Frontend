@@ -3,8 +3,6 @@ import { useState, useCallback, useEffect } from "react";
 import { Pie } from "react-chartjs-2";
 import { HiOutlineCurrencyRupee } from "react-icons/hi2";
 
-
-
 const AssetCards = (props) => {
   const portfolioData = props.portfolioData;
   const availableColors = props.availableColors;
@@ -13,7 +11,6 @@ const AssetCards = (props) => {
   const [totalProfit, setTotalProfit] = useState(0);
   const isPositiveChange = totalProfit >= 0;
   const cashHeld = portfolioData.Balance;
-  const stockLabels = portfolioData.stocks.map((stock) => stock.name);
 
   const allocationWithPercent = [
     {
@@ -30,9 +27,7 @@ const AssetCards = (props) => {
     },
   ];
 
-  const backgroundColors = stockLabels.map(
-    (_, index) => availableColors[index % availableColors.length]
-  );
+  const backgroundColors = availableColors.slice(0, 2);
 
   const data = {
     labels: ["Stocks", "Cash Held"],
@@ -58,16 +53,18 @@ const AssetCards = (props) => {
   const calculateTotal = useCallback((stocks) => {
     let total = 0;
     stocks.forEach((stock) => {
-      total += stock.quantity * stock.currentPrice;
+      total += stock.quantity * stock.current_price;
     });
+    total = parseFloat((total).toFixed(2));
     return total;
   }, []);
 
   const calculateTotalProfit = useCallback((stocks) => {
       let total = 0;
       stocks.forEach((stock) => {
-        total += (stock.currentPrice - stock.average_price) * stock.quantity;
+        total += (stock.current_price - stock.average_price) * stock.quantity;
       });
+      total = parseFloat((total).toFixed(4));
       return total;
     }, []);
 
@@ -148,7 +145,7 @@ const AssetCards = (props) => {
                 <h5 className="card-title text-white-50">
                   Total Portfolio Value
                 </h5>
-                <p className="card-text display-6 fw-bold text-light">
+                <p className="card-text display-6 fw-bold text-light mb-0">
                   <HiOutlineCurrencyRupee />{totalValue}
                 </p>
                 <p
