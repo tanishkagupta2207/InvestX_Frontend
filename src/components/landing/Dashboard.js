@@ -67,7 +67,8 @@ const Dashboard = (props) => {
       return;
     }
     fetchPortfolioData(token);
-  }, [token]);
+    // eslint-disable-next-line
+  }, [token ]);
 
   return (
     <div style={{ backgroundColor: "black", minHeight: "100vh" }}>

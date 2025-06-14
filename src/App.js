@@ -7,6 +7,7 @@ import Login from "./components/authentication/Login";
 import Alert from "./components/Alert";
 import Dashboard from "./components/landing/Dashboard";
 import TradePage from "./components/pages/TradePage";
+import BuySellPage from "./components/pages/BuySellPage";
 
 function App() {
 
@@ -33,6 +34,7 @@ function App() {
               <Route exact path="/signup" element={<Signup showAlert={showAlert}/>} />
               <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
               <Route exact path="/trade" element={<TradePage showAlert={showAlert}/>} />
+              <Route exact path="/trade/action" element={<BuySellPage showAlert={showAlert}/>} />
             </Routes>
           </div>
         </Router>

@@ -146,7 +146,7 @@ const AssetCards = (props) => {
                   Total Portfolio Value
                 </h5>
                 <p className="card-text display-6 fw-bold text-light mb-0">
-                  <HiOutlineCurrencyRupee />{totalValue}
+                  <HiOutlineCurrencyRupee />{parseFloat(totalValue).toFixed(3)}
                 </p>
                 <p
                   className={`card-text ${
@@ -165,7 +165,7 @@ const AssetCards = (props) => {
               <div className="card-body">
                 <h5 className="card-title text-white-50">Total Cash Held</h5>
                 <p className="card-text display-6 fw-bold text-light">
-                <HiOutlineCurrencyRupee />{cashHeld}
+                <HiOutlineCurrencyRupee />{parseFloat(cashHeld).toFixed(3)}{" "}
                 </p>
                 <p className="card-text text-muted">&nbsp;</p>
               </div>

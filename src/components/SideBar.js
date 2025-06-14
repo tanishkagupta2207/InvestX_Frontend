@@ -67,11 +67,11 @@ const SideBar = () => {
         <NavLink className="nav-link link-light d-flex align-items-center" to="/trade">
           <AiOutlineStock  className="me-2" /> Trade
         </NavLink>
-        <NavLink className="nav-link link-light d-flex align-items-center" to="/invities">
-          <IoTicketOutline className="me-2" /> Invities
+        <NavLink className="nav-link link-light d-flex align-items-center" to="/orders">
+          <IoTicketOutline className="me-2" /> Orders
         </NavLink>
-        <NavLink className="nav-link link-light d-flex align-items-center" to="/rsvp">
-          <IoPeopleOutline className="me-2" /> RSVPs
+        <NavLink className="nav-link link-light d-flex align-items-center" to="/transactions">
+          <IoPeopleOutline className="me-2" /> Transactions
         </NavLink>
 
         <button
