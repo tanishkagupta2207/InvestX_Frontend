@@ -11,3 +11,33 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Target the element that has the scrollbars */
+.table-responsive::-webkit-scrollbar {
+  width: 12px;  /* Width of the vertical scrollbar */
+  height: 12px; /* Height of the horizontal scrollbar */
+}
+
+/* The "track" (the background of the scrollbar) */
+.table-responsive::-webkit-scrollbar-track {
+  background: #212529; /* A dark color, like Bootstrap's 'bg-dark' */
+}
+
+/* The "thumb" (the draggable part of the scrollbar) */
+.table-responsive::-webkit-scrollbar-thumb {
+  background-color: #6c757d; /* A gray color, like Bootstrap's 'secondary' */
+  border-radius: 10px;
+  border: 3px solid #212529; /* Creates a padding effect around the thumb */
+}
+
+/* The thumb on hover */
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background-color: #adb5bd; /* A lighter gray for hover effect */
+}
+
+
+/* --- Standard Scrollbar Styling for Firefox --- */
+.table-responsive {
+  scrollbar-width: thin;
+  scrollbar-color: #6c757d #212529; /* thumb color track color */
+}

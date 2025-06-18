@@ -8,6 +8,7 @@ import Alert from "./components/Alert";
 import Dashboard from "./components/landing/Dashboard";
 import TradePage from "./components/pages/TradePage";
 import BuySellPage from "./components/pages/BuySellPage";
+import OrderPage from "./components/pages/OrdersPage";
 
 function App() {
 
@@ -35,6 +36,7 @@ function App() {
               <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
               <Route exact path="/trade" element={<TradePage showAlert={showAlert}/>} />
               <Route exact path="/trade/action" element={<BuySellPage showAlert={showAlert}/>} />
+              <Route exact path = '/orders' element={<OrderPage showAlert={showAlert}/>} />
             </Routes>
           </div>
         </Router>
