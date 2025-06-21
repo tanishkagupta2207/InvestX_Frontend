@@ -1,10 +1,81 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import SideBar from "../SideBar";
+import { format, parseISO, formatDistanceToNow } from 'date-fns'; // Import date-fns functions
+
+// const formatDisplayDate = (dateString) => {
+//   if (!dateString) return ""; // Handle cases where dateString might be null or undefined
+//   try {
+//     const dateObject = new Date(dateString);
+//     // Use Intl.DateTimeFormat for locale-aware and user-friendly display
+//     // 'default' uses the user's browser locale.
+//     // Here we're showing a medium date style and short time style.
+//     const options = {
+//       year: 'numeric',
+//       month: 'short', // e.g., Apr
+//       day: 'numeric',
+//       hour: '2-digit', // e.g., 05
+//       minute: '2-digit', // e.g., 27
+//       second: '2-digit', // e.g., 28
+//       hour12: false, // Use 24-hour format (e.g., 17:27:28)
+//       timeZoneName: 'shortOffset' // Display timezone offset (e.g., GMT+5:30)
+//     };
+//     return new Intl.DateTimeFormat('default', options).format(dateObject);
+//   } catch (error) {
+//     console.error("Error formatting date:", dateString, error);
+//     return dateString; // Fallback to raw string if formatting fails
+//   }
+// };
+
+// Helper function to format the date
+const formatDisplayDate = (dateString, type = 'shortDatetime') => {
+  if (!dateString) return ""; // Handle cases where dateString might be null or undefined
+
+  try {
+    const dateObject = parseISO(dateString); // Use parseISO for robust ISO string parsing
+
+    switch (type) {
+      case 'dateOnly':
+        // Example: Apr 16, 2025
+        return format(dateObject, 'PPP');
+      case 'timeOnly':
+        // Example: 11:57 AM or 17:27
+        return format(dateObject, 'p');
+      case 'relative':
+        // Example: 9 months ago, in 2 hours
+        return formatDistanceToNow(dateObject, { addSuffix: true });
+      case 'fullDatetime':
+        // Example: Apr 16, 2025, 17:27:28 +05:30
+        const options = {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false, // 24-hour format
+          timeZoneName: 'shortOffset' // Display timezone offset (e.g., GMT+5:30)
+        };
+        return new Intl.DateTimeFormat('default', options).format(dateObject);
+      case 'shortDatetime': // Default if type is not specified or unrecognized
+      default:
+        // Example: Apr 16, 2025, 5:27 PM (using locale-aware 'PPP p' from date-fns)
+        return format(dateObject, 'PPP p');
+    }
+  } catch (error) {
+    console.error("Error formatting date:", dateString, error);
+    return dateString; // Fallback to raw string if formatting fails
+  }
+};
+
 
 const OrderPage = (props) => {
   const token = localStorage.getItem("token");
   const [orderData, setOrderData] = useState(null);
   const [dataRows, setDataRows] = useState(0);
+
+  // State variables for sorting
+  const [sortBy, setSortBy] = useState(null); // Stores the column key to sort by (e.g., 'quantity', 'date')
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' for ascending, 'desc' for descending
 
   // State variables for different filter types
   const [orderTypeFilter, setOrderTypeFilter] = useState("");
@@ -58,7 +129,7 @@ const OrderPage = (props) => {
       console.error("Error fetching order data:", error);
       props.showAlert("Something went wrong! Please try again later.", "danger");
     }
-  }, [orderTypeFilter, orderSubTypeFilter,timeInForceFilter, statusFilter, props, minRows]);
+  }, [orderTypeFilter, orderSubTypeFilter, timeInForceFilter, statusFilter, props, minRows]);
 
   useEffect(() => {
     if (!token) {
@@ -87,6 +158,54 @@ const OrderPage = (props) => {
     };
 
   }, [token, fetchOrderData, showOrderTypeFilterDropdown, showOrderSubTypeFilterDropdown, showTimeInForceFilterDropdown, showStatusFilterDropdown]);
+
+  // Handle sorting logic when a header is clicked
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      // If clicking the same column, toggle sort order
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If clicking a new column, sort ascending by default
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  // Memoize sorted data to prevent re-sorting on every render
+  const sortedOrderData = useMemo(() => {
+    if (!orderData) return []; // If no data, return empty array
+
+    const sortableData = [...orderData]; // Create a shallow copy to avoid mutating original state
+
+    if (sortBy) {
+      sortableData.sort((a, b) => {
+        let valueA = a[sortBy];
+        let valueB = b[sortBy];
+
+        // Type-specific comparison logic
+        if (['date', 'order_updation_date'].includes(sortBy)) {
+          // For dates, convert to milliseconds for numerical comparison
+          valueA = valueA ? new Date(valueA).getTime() : 0;
+          valueB = valueB ? new Date(valueB).getTime() : 0;
+        } else if (['quantity', 'price', 'limit_price', 'stop_price', 'take_profit_price', 'filled_quantity', 'average_fill_price'].includes(sortBy)) {
+          // For numbers, parse to float and compare
+          valueA = parseFloat(valueA) || 2147483647; // Use a large number for NaN values
+          valueB = parseFloat(valueB) || 2147483647; // Use a large number for NaN values
+        } else {
+          valueA = String(valueA).toLowerCase();
+          valueB = String(valueB).toLowerCase();
+        }
+        if (valueA < valueB) {
+          return sortOrder === 'asc' ? -1 : 1;
+        }
+        if (valueA > valueB) {
+          return sortOrder === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableData;
+  }, [orderData, sortBy, sortOrder]);
 
   const toggleOrderTypeFilterDropdown = () => {
     setShowOrderTypeFilterDropdown((prevState) => !prevState);
@@ -138,180 +257,230 @@ const OrderPage = (props) => {
                 ORDERS OVERVIEW
               </p>
 
-              <div
-                className="table-responsive"
-                style={{ maxHeight: "575px", overflow: "auto" }}
-              >
-                <table className="table table-striped table-dark table-bordered">
-                  <thead
-                    style={{
-                      position: "sticky",
-                      top: 0,
-                      zIndex: 1,
-                      backgroundColor: "black",
-                    }}
-                  >
-                    <tr>
-                      <th>Company</th>
+              {dataRows === 0 ? (
+                <div className="text-center" style={{ marginTop: "20px" }}>
+                  No orders found. Please place an order to see it here.
+                </div>
+              ) : (
+                <div
+                  className="table-responsive"
+                  style={{ maxHeight: "575px", overflow: "auto" }}
+                >
+                  <table className="table table-striped table-dark table-bordered">
+                    <thead
+                      style={{
+                        position: "sticky",
+                        top: 0,
+                        zIndex: 1,
+                        backgroundColor: "black",
+                      }}
+                    >
+                      <tr>
+                        <th>Company</th>
 
-                      <th
-                        onClick={toggleOrderTypeFilterDropdown}
-                        style={{ cursor: "pointer", position: "relative" }}
-                      >
-                        Order Type
-                        {showOrderTypeFilterDropdown && (
-                          <div
-                            className="dropdown-menu show bg-dark border-secondary order-type-filter-dropdown"
-                            style={{
-                              position: "absolute", top: "100%", left: 0,
-                              minWidth: "150px", zIndex: 10, borderRadius: '0.5rem'
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("")}>
-                                All
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("Buy")}>
-                                Buy
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("Sell")}>
-                                Sell
-                            </button>
-                          </div>
-                        )}
-                      </th>
-                      <th
-                        onClick={toggleOrderSubTypeFilterDropdown}
-                        style={{ cursor: "pointer", position: "relative" }}
-                      >
-                        Order Sub Type
-                        {showOrderSubTypeFilterDropdown && (
-                          <div
-                            className="dropdown-menu show bg-dark border-secondary order-sub-type-filter-dropdown"
-                            style={{
-                              position: "absolute", top: "100%", left: 0,
-                              minWidth: "150px", zIndex: 10, borderRadius: '0.5rem'
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("")}>
-                                All
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("MARKET")}>
-                                MARKET
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("LIMIT")}>
-                                LIMIT
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("STOP_LOSS")}>
-                                STOP LOSS
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("TAKE_PROFIT")}>
-                                TAKE PROFIT
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("STOP_LIMIT")}>
-                                STOP LIMIT
-                            </button>
-                          </div>
-                        )}
-                      </th>
-                      <th>Quantity</th>
-                      <th>Price</th>
-                      <th>Limit Price</th>
-                      <th>Stop Price</th>
-                      <th>Take Profit Price</th>
-                      <th
-                        onClick={toggleTimeInForceFilterDropdown}
-                        style={{ cursor: "pointer", position: "relative" }}
-                      >
-                        Time in Force
-                        {showTimeInForceFilterDropdown && (
-                          <div
-                            className="dropdown-menu show bg-dark border-secondary time-in-force-filter-dropdown"
-                            style={{
-                              position: "absolute", top: "100%", left: 0,
-                              minWidth: "150px", zIndex: 10, borderRadius: '0.5rem'
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("")}>
-                                All
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("DAY")}>
-                                Day
-                            </button>
-                            <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("GTC")}>
-                                Good Till Cancelled (GTC)
-                            </button>
-                          </div>
-                        )}
-                      </th>
-                      <th
-                        onClick={toggleStatusFilterDropdown} // Click handler to toggle dropdown
-                        style={{ cursor: "pointer", position: "relative" }} // Style for clickable header
-                      >
-                        Status
-                        {showStatusFilterDropdown && (
-                          <div
-                            className="dropdown-menu show bg-dark border-secondary status-filter-dropdown" // Bootstrap dropdown classes, custom class for outside click detection
-                            style={{
-                              position: "absolute", // Position relative to the parent <th>
-                              top: "100%", // Place it directly below the header
-                              left: 0,
-                              minWidth: "150px", // Ensure minimum width for readability
-                              zIndex: 10, // Ensure it overlays other content
-                              borderRadius: '0.5rem'
-                            }}
-                            // Stop event propagation to prevent immediate closing by document click
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                                className="dropdown-item text-light bg-dark"
-                                onClick={() => handleStatusFilterChange("")}
+                        <th
+                          onClick={toggleOrderTypeFilterDropdown}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Order Type
+                          {showOrderTypeFilterDropdown && (
+                            <div
+                              className="dropdown-menu show bg-dark border-secondary order-type-filter-dropdown"
+                              style={{
+                                position: "absolute", top: "100%", left: 0,
+                                minWidth: "150px", zIndex: 10, borderRadius: '0.5rem'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                                All
-                            </button>
-                            <button
-                                className="dropdown-item text-light bg-dark"
-                                onClick={() => handleStatusFilterChange("PENDING")}
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("")}>
+                                  All
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("Buy")}>
+                                  Buy
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("Sell")}>
+                                  Sell
+                              </button>
+                            </div>
+                          )}
+                        </th>
+                        <th
+                          onClick={toggleOrderSubTypeFilterDropdown}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Order Sub Type
+                          {showOrderSubTypeFilterDropdown && (
+                            <div
+                              className="dropdown-menu show bg-dark border-secondary order-sub-type-filter-dropdown"
+                              style={{
+                                position: "absolute", top: "100%", left: 0,
+                                minWidth: "150px", zIndex: 10, borderRadius: '0.5rem'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                                Pending
-                            </button>
-                            <button
-                                className="dropdown-item text-light bg-dark"
-                                onClick={() => handleStatusFilterChange("FILLED")}
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("")}>
+                                  All
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("MARKET")}>
+                                  MARKET
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("LIMIT")}>
+                                  LIMIT
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("STOP_LOSS")}>
+                                  STOP LOSS
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("TAKE_PROFIT")}>
+                                  TAKE PROFIT
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("STOP_LIMIT")}>
+                                  STOP LIMIT
+                              </button>
+                            </div>
+                          )}
+                        </th>
+                        <th
+                          onClick={() => handleSort('quantity')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Quantity {sortBy === 'quantity' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('price')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Price {sortBy === 'price' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('limit_price')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Limit Price {sortBy === 'limit_price' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('stop_price')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Stop Price {sortBy === 'stop_price' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('take_profit_price')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Take Profit Price {sortBy === 'take_profit_price' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={toggleTimeInForceFilterDropdown}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Time in Force
+                          {showTimeInForceFilterDropdown && (
+                            <div
+                              className="dropdown-menu show bg-dark border-secondary time-in-force-filter-dropdown"
+                              style={{
+                                position: "absolute", top: "100%", left: 0,
+                                minWidth: "150px", zIndex: 10, borderRadius: '0.5rem'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                                Filled
-                            </button>
-                            <button
-                                className="dropdown-item text-light bg-dark"
-                                onClick={() => handleStatusFilterChange("PARTIALLY_FILLED")}
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("")}>
+                                  All
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("DAY")}>
+                                  Day
+                              </button>
+                              <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("GTC")}>
+                                  Good Till Cancelled (GTC)
+                              </button>
+                            </div>
+                          )}
+                        </th>
+                        <th
+                          onClick={toggleStatusFilterDropdown}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Status
+                          {showStatusFilterDropdown && (
+                            <div
+                              className="dropdown-menu show bg-dark border-secondary status-filter-dropdown"
+                              style={{
+                                position: "absolute",
+                                top: "100%",
+                                left: 0,
+                                minWidth: "150px",
+                                zIndex: 10,
+                                borderRadius: '0.5rem'
+                              }}
+                              onClick={(e) => e.stopPropagation()}
                             >
-                                Partially Filled
-                            </button>
-                            <button
-                                className="dropdown-item text-light bg-dark"
-                                onClick={() => handleStatusFilterChange("CANCELLED")}
-                            >
-                                Cancelled
-                            </button>
-                            <button
-                                className="dropdown-item text-light bg-dark"
-                                onClick={() => handleStatusFilterChange("REJECTED")}
-                            >
-                                Rejected
-                            </button>
-                          </div>
-                        )}
-                      </th>
-                      <th>Filled Quantity</th>
-                      <th>Average Fill Price</th>
-                    </tr>
-                  </thead>
-                  <tbody className="table-group-divider">
-                    {/* Render order data if available */}
-                    {orderData &&
-                      orderData.slice(0, rowsToDisplay).map((item) => (
+                              <button
+                                  className="dropdown-item text-light bg-dark"
+                                  onClick={() => handleStatusFilterChange("")}
+                              >
+                                  All
+                              </button>
+                              <button
+                                  className="dropdown-item text-light bg-dark"
+                                  onClick={() => handleStatusFilterChange("PENDING")}
+                              >
+                                  Pending
+                              </button>
+                              <button
+                                  className="dropdown-item text-light bg-dark"
+                                  onClick={() => handleStatusFilterChange("FILLED")}
+                              >
+                                  Filled
+                              </button>
+                              <button
+                                  className="dropdown-item text-light bg-dark"
+                                  onClick={() => handleStatusFilterChange("PARTIALLY_FILLED")}
+                              >
+                                  Partially Filled
+                              </button>
+                              <button
+                                  className="dropdown-item text-light bg-dark"
+                                  onClick={() => handleStatusFilterChange("CANCELLED")}
+                              >
+                                  Cancelled
+                              </button>
+                              <button
+                                  className="dropdown-item text-light bg-dark"
+                                  onClick={() => handleStatusFilterChange("REJECTED")}
+                              >
+                                  Rejected
+                              </button>
+                            </div>
+                          )}
+                        </th>
+                        <th
+                          onClick={() => handleSort('filled_quantity')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Filled Quantity {sortBy === 'filled_quantity' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('average_fill_price')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Average Fill Price {sortBy === 'average_fill_price' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('date')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Order Date {sortBy === 'date' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th
+                          onClick={() => handleSort('order_updation_date')}
+                          style={{ cursor: "pointer", position: "relative" }}
+                        >
+                          Order Updation Date {sortBy === 'order_updation_date' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="table-group-divider">
+                      {/* Render order data after sorting */}
+                      {sortedOrderData.slice(0, rowsToDisplay).map((item) => (
                         <tr key={item._id}>
                           <th>{item.company}</th>
                           <td>{item.order_type}</td>
@@ -325,23 +494,26 @@ const OrderPage = (props) => {
                           <td>{item.status}</td>
                           <td>{item.filled_quantity}</td>
                           <td>{item.average_fill_price}</td>
+                          <td>{formatDisplayDate(item.date)}</td>
+                          <td>{formatDisplayDate(item.order_updation_date)}</td>
                         </tr>
                       ))}
-                    {/* Render empty rows to maintain minimum table height */}
-                    {dataRows < minRows &&
-                      Array(minRows - dataRows)
-                        .fill(null)
-                        .map((_, index) => (
-                          <tr key={`empty-${index}`}>
-                            <th>&nbsp;</th><td>&nbsp;</td><td>&nbsp;</td>
-                            <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-                            <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-                            <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-                          </tr>
-                        ))}
-                  </tbody>
-                </table>
-              </div>
+                      {/* Render empty rows to maintain minimum table height */}
+                      {dataRows < minRows &&
+                        Array(minRows - dataRows)
+                          .fill(null)
+                          .map((_, index) => (
+                            <tr key={`empty-${index}`}>
+                              <th>&nbsp;</th><td>&nbsp;</td><td>&nbsp;</td>
+                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                              <td>&nbsp;</td><td>&nbsp;</td>
+                            </tr>
+                          ))}
+                    </tbody>
+                  </table>
+                </div>)}
             </div>
           </div>
         </div>
@@ -349,5 +521,4 @@ const OrderPage = (props) => {
     </div>
   );
 };
-
 export default OrderPage;

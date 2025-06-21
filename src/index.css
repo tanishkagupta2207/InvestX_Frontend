@@ -12,32 +12,34 @@ code {
     monospace;
 }
 
-/* Target the element that has the scrollbars */
-.table-responsive::-webkit-scrollbar {
-  width: 12px;  /* Width of the vertical scrollbar */
+/* --- Webkit (Chrome, Safari, Edge) Scrollbar Styling for ALL scrollbars --- */
+/* Target the scrollbar itself */
+::-webkit-scrollbar {
+  width: 15px;  /* Width of the vertical scrollbar */
   height: 12px; /* Height of the horizontal scrollbar */
 }
 
-/* The "track" (the background of the scrollbar) */
-.table-responsive::-webkit-scrollbar-track {
+/* Target the "track" (the background of the scrollbar) */
+::-webkit-scrollbar-track {
   background: #212529; /* A dark color, like Bootstrap's 'bg-dark' */
 }
 
-/* The "thumb" (the draggable part of the scrollbar) */
-.table-responsive::-webkit-scrollbar-thumb {
+/* Target the "thumb" (the draggable part of the scrollbar) */
+::-webkit-scrollbar-thumb {
   background-color: #6c757d; /* A gray color, like Bootstrap's 'secondary' */
   border-radius: 10px;
   border: 3px solid #212529; /* Creates a padding effect around the thumb */
 }
 
 /* The thumb on hover */
-.table-responsive::-webkit-scrollbar-thumb:hover {
+::-webkit-scrollbar-thumb:hover {
   background-color: #adb5bd; /* A lighter gray for hover effect */
 }
 
 
-/* --- Standard Scrollbar Styling for Firefox --- */
-.table-responsive {
+/* --- Standard Scrollbar Styling for Firefox (for ALL scrollbars) --- */
+/* Apply to the root HTML element or body */
+html, body {
   scrollbar-width: thin;
   scrollbar-color: #6c757d #212529; /* thumb color track color */
 }
