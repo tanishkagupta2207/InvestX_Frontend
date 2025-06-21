@@ -134,12 +134,16 @@ const TransactionsPage = (props) => {
       sortableData.sort((a, b) => {
         let valueA = a[sortBy];
         let valueB = b[sortBy];
+        if(sortBy === 'total_amount') {
+            valueA = a.quantity * a.trade_price;
+            valueB = b.quantity * b.trade_price;
+        }
 
         // Type-specific comparison logic
         if (['date'].includes(sortBy)) {
           valueA = valueA ? new Date(valueA).getTime() : 0;
           valueB = valueB ? new Date(valueB).getTime() : 0;
-        } else if (['quantity', 'trade_price'].includes(sortBy)) {
+        } else if (['quantity', 'trade_price', 'total_amount'].includes(sortBy)) {
           valueA = parseFloat(valueA) || 2147483647; // Use a large number for NaN values
           valueB = parseFloat(valueB) || 2147483647; // Use a large number for NaN values
         } else {
@@ -244,6 +248,11 @@ const TransactionsPage = (props) => {
                         >
                           Trade Price {sortBy === 'trade_price' && (sortOrder === 'asc' ? '▲' : '▼')}
                         </th>
+
+                        <th onClick={() => handleSort('total_amount')}
+                          style={{ cursor: "pointer", position: "relative" }}>
+                            Total Amount {sortBy === 'total_amount' && (sortOrder === 'asc' ? '▲' : '▼')}
+                        </th>
                         
                         <th
                           onClick={() => handleSort('date')}
@@ -260,9 +269,10 @@ const TransactionsPage = (props) => {
                       {sortedTransactionsData.slice(0, rowsToDisplay).map((item) => (
                         <tr key={item._id}>
                           <th>{item.company}</th>
-                          <td>{item.action}</td>
-                          <td>{item.quantity}</td>
-                          <td>{item.trade_price}</td>
+                          <td className={item.action === "Buy" ? "text-success fw-semibold" : "text-danger fw-semibold"}>{item.action}</td>
+                          <td className={item.action === "Buy" ? "text-success fw-semibold" : "text-danger fw-semibold"}>{item.quantity}</td>
+                          <td className={item.action === "Buy" ? "text-success fw-semibold" : "text-danger fw-semibold"}>{item.trade_price}</td>
+                          <td className={item.action === "Buy" ? "text-success fw-semibold" : "text-danger fw-semibold"}>{item.quantity * item.trade_price}</td>
                           <td>{formatDisplayDate(item.date)}</td>
                         </tr>
                       ))}
@@ -273,7 +283,7 @@ const TransactionsPage = (props) => {
                           .map((_, index) => (
                             <tr key={`empty-${index}`}>
                               <th>&nbsp;</th><td>&nbsp;</td><td>&nbsp;</td>
-                              <td>&nbsp;</td><td>&nbsp;</td>
+                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
                             </tr>
                           ))}
                     </tbody>
