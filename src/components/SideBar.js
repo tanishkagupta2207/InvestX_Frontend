@@ -73,6 +73,9 @@ const SideBar = () => {
         <NavLink className="nav-link link-light d-flex align-items-center" to="/transactions">
           <IoPeopleOutline className="me-2" /> Transactions
         </NavLink>
+        <NavLink className="nav-link link-light d-flex align-items-center" to="/watchList">
+          <IoPeopleOutline className="me-2" /> Watchlist
+        </NavLink>
 
         <button
           className="nav-link text-light d-flex align-items-center text-start position-relative" // Added text-light
