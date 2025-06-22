@@ -118,6 +118,7 @@ function TradePage(props) {
                   stockName={stock.name}
                   company_id={stock.company_id}
                   showAlert={props.showAlert}
+                  inInWatchList={false}
                 />
               ))
             : selectedCategory && (

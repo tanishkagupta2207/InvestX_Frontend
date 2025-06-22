@@ -20,7 +20,13 @@ const formatApiDataForChart = (apiData) => {
 };
 
 // --- ChartWrapper component ---
-const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
+const ChartWrapper = ({
+  stockSymbol,
+  stockName,
+  company_id,
+  showAlert,
+  inInWatchList,
+}) => {
   const navigate = useNavigate();
   const [simplifyGraph, setSimplifyGraph] = useState(false);
   const [chartData, setChartData] = useState([]);
@@ -32,6 +38,11 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
   const [company, setCompany] = useState(null);
   const [actionAllowed, setActionAllowed] = useState(false);
   const [marketEndedAlertShown, setMarketEndedAlertShown] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(inInWatchList);
+
+  useEffect(() => {
+    setIsInWatchlist(isInWatchlist);
+  }, [isInWatchlist]);
 
   const fetchChartData = useCallback(async (symbol, range, company_id) => {
     setIsLoading(true);
@@ -210,6 +221,7 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
       const res = await response.json();
       if (res.success) {
         setWatchlistMessage(res.msg);
+        setIsInWatchlist(true);
         setTimeout(() => setWatchlistMessage(""), 3000);
       } else {
         setWatchlistMessage(
@@ -226,6 +238,52 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
     }
   };
 
+  const handleRemoveFromWatchlist = async () => {
+    console.log("Removing from watchlist:", stockSymbol);
+    if (!company_id) {
+      console.error(
+        "Cannot remove from watchlist: company_id is missing for",
+        stockSymbol
+      );
+      setWatchlistMessage("Error: Company details missing for removal.");
+      return;
+    }
+    setIsWatchlistLoading(true);
+    setWatchlistMessage("");
+
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_HOST_URL}api/watchList/remove`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": `${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ companyId: company_id }),
+        }
+      );
+      const res = await response.json();
+      if (res.success) {
+        setWatchlistMessage(res.msg);
+        setIsInWatchlist(false);
+        setTimeout(() => setWatchlistMessage(""), 3000);
+      } else {
+        setWatchlistMessage(
+          `Error: ${res.msg || "Failed to remove from watchlist."}`
+        );
+        showAlert(res.msg || "Failed to remove from watchlist.", "danger");
+        setTimeout(() => setWatchlistMessage(""), 5000);
+      }
+    } catch (error) {
+      console.error("Failed to remove from watchlist:", error);
+      setWatchlistMessage(`Error: ${error.message}`);
+      setTimeout(() => setWatchlistMessage(""), 5000);
+    } finally {
+      setIsWatchlistLoading(false);
+    }
+  };
+
   return (
     <div className="col-12 mb-4">
       <div className="card bg-dark border-secondary h-100">
@@ -233,16 +291,8 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
           <h5 className="mb-0 text-white">
             {stockName} ({stockSymbol})
           </h5>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-info"
-            style={{ marginRight: "auto" }}
-            onClick={handleAddToWatchlist}
-            disabled={isWatchlistLoading || isLoading}
-            title="Add to Watchlist"
-          >
-            {isWatchlistLoading ? (
-              // Show spinner and visually hidden text when loading
+          {!isInWatchlist ? (
+            isWatchlistLoading ? (
               <>
                 <span
                   className="spinner-border spinner-border-sm"
@@ -252,14 +302,46 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
                 <span className="visually-hidden ms-1">Adding...</span>
               </>
             ) : (
-              // Show button text when not loading
-              "+ Watchlist"
-            )}
-          </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-info"
+                style={{ marginRight: "auto" }}
+                onClick={handleAddToWatchlist}
+                disabled={isWatchlistLoading || isLoading}
+                title="Add to Watchlist"
+              >
+                + Watchlist
+              </button>
+            )
+          ) : isWatchlistLoading ? (
+            <>
+              <span
+                className="spinner-border spinner-border-sm"
+                role="status"
+                aria-hidden="true"
+              ></span>
+              <span className="visually-hidden ms-1">Removing...</span>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-danger"
+              style={{ marginRight: "auto" }}
+              onClick={handleRemoveFromWatchlist}
+              disabled={isWatchlistLoading || isLoading}
+              title="Remove from Watchlist"
+            >
+              - Watchlist
+            </button>
+          )}
           {watchlistMessage && (
             <div
               className={`alert alert-${
-                watchlistMessage.startsWith("Error") ? "danger" : "success"
+                watchlistMessage.startsWith("Error") ||
+                watchlistMessage.includes("removed from WatchList") ||
+                watchlistMessage.includes("already in WatchList")
+                  ? "danger"
+                  : "success"
               } py-1 px-3 m-2 mb-0 text-center small`}
               role="alert"
             >

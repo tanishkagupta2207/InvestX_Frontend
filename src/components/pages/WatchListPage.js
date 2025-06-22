@@ -78,6 +78,7 @@ function WatchListPage(props) {
                   stockName={company.name}
                   company_id={company.company_id}
                   showAlert={props.showAlert}
+                  inInWatchList={true}
                 />
               ))
             : (
