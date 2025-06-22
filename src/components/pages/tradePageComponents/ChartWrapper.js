@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import StockChart from "./StockChart"; 
+import StockChart from "./StockChart";
 
 // --- Helper Function to Format API Data ---
 const formatApiDataForChart = (apiData) => {
@@ -189,40 +189,41 @@ const ChartWrapper = ({ stockSymbol, stockName, company_id, showAlert }) => {
         "Cannot add to watchlist: company_id is missing for",
         stockSymbol
       );
-      setWatchlistMessage("Error: Company ID missing.");
+      setWatchlistMessage("Error: Company details missing.");
       return;
     }
     setIsWatchlistLoading(true);
-    setWatchlistMessage(""); // Clear previous message
-    console.log(
-      `Attempting to add ${stockSymbol} (ID: ${company_id}) to watchlist...`
-    );
+    setWatchlistMessage("");
 
-    // --- Simulate API Call ---
     try {
-      // Replace with your actual API call:
-      // const response = await fetch('/api/watchlist', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json', /* Auth */ },
-      //     body: JSON.stringify({ companyId: companyId }) // Send ID
-      // });
-      // const result = await response.json();
-      // if (!response.ok || !result.success) {
-      //     throw new Error(result.error || 'Failed to add to watchlist.');
-      // }
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulate delay
-      console.log(`${stockSymbol} added to watchlist (Simulated)`);
-      // Set success message (could clear after a few seconds)
-      setWatchlistMessage(`${stockSymbol} added to WatchList!`);
-      setTimeout(() => setWatchlistMessage(""), 3000); // Clear message after 3s
+      const response = await fetch(
+        `${process.env.REACT_APP_HOST_URL}api/watchList/add`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": `${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ companyId: company_id }),
+        }
+      );
+      const res = await response.json();
+      if (res.success) {
+        setWatchlistMessage(res.msg);
+        setTimeout(() => setWatchlistMessage(""), 3000);
+      } else {
+        setWatchlistMessage(
+          `Error: ${res.msg || "Failed to add to watchlist."}`
+        );
+        setTimeout(() => setWatchlistMessage(""), 5000);
+      }
     } catch (error) {
       console.error("Failed to add to watchlist:", error);
       setWatchlistMessage(`Error: ${error.message}`);
-      // Don't auto-clear error message
+      setTimeout(() => setWatchlistMessage(""), 5000);
     } finally {
       setIsWatchlistLoading(false);
     }
-    // --- End Simulation ---
   };
 
   return (
