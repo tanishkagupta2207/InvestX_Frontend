@@ -11,6 +11,7 @@ import BuySellPage from "./components/pages/BuySellPage";
 import OrderPage from "./components/pages/OrdersPage";
 import TransactionsPage from "./components/pages/TransactionsPage";
 import WatchListPage from "./components/pages/WatchListPage";
+import PortfolioPage from "./components/pages/PortfolioPage";
 
 function App() {
 
@@ -41,6 +42,7 @@ function App() {
               <Route exact path = '/orders' element={<OrderPage showAlert={showAlert}/>} />
               <Route exact path = '/transactions' element={<TransactionsPage showAlert={showAlert}/>} />
               <Route exact path = '/watchlist' element={<WatchListPage showAlert={showAlert}/>} />
+              <Route path="portfolio/:userId" element={<PortfolioPage showAlert={showAlert} />} />
             </Routes>
           </div>
         </Router>
