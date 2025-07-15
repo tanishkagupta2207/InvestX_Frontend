@@ -12,6 +12,7 @@ import OrderPage from "./components/pages/OrdersPage";
 import TransactionsPage from "./components/pages/TransactionsPage";
 import WatchListPage from "./components/pages/WatchListPage";
 import PortfolioPage from "./components/pages/PortfolioPage";
+import AccountPage from "./components/pages/AccountPage";
 
 function App() {
 
@@ -23,7 +24,7 @@ function App() {
     })
     setTimeout(() => {
         setAlert(null);
-    }, 1500);
+    }, 3000);
 }
 
   return (
@@ -43,6 +44,8 @@ function App() {
               <Route exact path = '/transactions' element={<TransactionsPage showAlert={showAlert}/>} />
               <Route exact path = '/watchlist' element={<WatchListPage showAlert={showAlert}/>} />
               <Route path="portfolio/:userId" element={<PortfolioPage showAlert={showAlert} />} />
+              <Route path="/account" element={<AccountPage showAlert={showAlert}/>} />
+              <Route path="*" element={<div>404 Not Found</div>} /> 
             </Routes>
           </div>
         </Router>

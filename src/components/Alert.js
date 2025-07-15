@@ -28,7 +28,6 @@ function Alert(props) {
           role="alert"
         >
           <strong>{capitalize(props.alert.type)}</strong>: {props.alert.msg}
-          {/* <button type="button" className="btn-close" onClick={handleCloseAlert}></button> */} {/*TODO*/}
         </div>
       )}
     </div>
