@@ -11,6 +11,7 @@ const AssetCards = (props) => {
   const [totalProfit, setTotalProfit] = useState(0);
   const isPositiveChange = totalProfit >= 0;
   const cashHeld = portfolioData.Balance;
+  const xirr = portfolioData.xirr || null;
 
   // Ensure totalValue is calculated before allocationWithPercent to avoid NaN
   const calculatedTotalValue = useCallback((stocks, balance) => {
@@ -215,13 +216,13 @@ const AssetCards = (props) => {
             </div>
           </div>
 
-          {/* Total Bonds Value Card */}
+          {/* XIRR Value Card */}
           <div className="col-md-6 col-sm-12">
             <div className="card bg-dark border-secondary h-100">
               <div className="card-body">
-                <h5 className="card-title text-white-50">Total Bonds Value</h5>
+                <h5 className="card-title text-white-50">XIRR</h5>
                 <p className="card-text display-6 fw-bold text-light">
-                  <HiOutlineCurrencyRupee />{0}{" "} {/** TODO */}
+                  {xirr}{"%"}
                 </p>
                 <p className="card-text text-muted">&nbsp;</p>
               </div>
