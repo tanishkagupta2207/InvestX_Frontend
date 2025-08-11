@@ -2,30 +2,6 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import SideBar from "../SideBar";
 import { format, parseISO, formatDistanceToNow } from 'date-fns'; // Import date-fns functions
 
-// const formatDisplayDate = (dateString) => {
-//   if (!dateString) return ""; // Handle cases where dateString might be null or undefined
-//   try {
-//     const dateObject = new Date(dateString);
-//     // Use Intl.DateTimeFormat for locale-aware and user-friendly display
-//     // 'default' uses the user's browser locale.
-//     // Here we're showing a medium date style and short time style.
-//     const options = {
-//       year: 'numeric',
-//       month: 'short', // e.g., Apr
-//       day: 'numeric',
-//       hour: '2-digit', // e.g., 05
-//       minute: '2-digit', // e.g., 27
-//       second: '2-digit', // e.g., 28
-//       hour12: false, // Use 24-hour format (e.g., 17:27:28)
-//       timeZoneName: 'shortOffset' // Display timezone offset (e.g., GMT+5:30)
-//     };
-//     return new Intl.DateTimeFormat('default', options).format(dateObject);
-//   } catch (error) {
-//     console.error("Error formatting date:", dateString, error);
-//     return dateString; // Fallback to raw string if formatting fails
-//   }
-// };
-
 // Helper function to format the date
 const formatDisplayDate = (dateString, type = 'shortDatetime') => {
   if (!dateString) return ""; // Handle cases where dateString might be null or undefined
@@ -189,8 +165,8 @@ const OrderPage = (props) => {
           valueB = valueB ? new Date(valueB).getTime() : 0;
         } else if (['quantity', 'price', 'limit_price', 'stop_price', 'take_profit_price', 'filled_quantity', 'average_fill_price'].includes(sortBy)) {
           // For numbers, parse to float and compare
-          valueA = parseFloat(valueA) || 2147483647; // Use a large number for NaN values
-          valueB = parseFloat(valueB) || 2147483647; // Use a large number for NaN values
+          valueA = parseFloat(valueA) || -2147483647; // Use a large number for NaN values
+          valueB = parseFloat(valueB) || -2147483647; // Use a large number for NaN values
         } else {
           valueA = String(valueA).toLowerCase();
           valueB = String(valueB).toLowerCase();
@@ -256,12 +232,7 @@ const OrderPage = (props) => {
               <p className="text-muted" style={{ margin: "0px" }}>
                 ORDERS OVERVIEW
               </p>
-
-              {dataRows === 0 ? (
-                <div className="text-center" style={{ marginTop: "20px" }}>
-                  No orders found. Please place an order to see it here.
-                </div>
-              ) : (
+                {/* Always render the table container, but show a message if there are no orders */}
                 <div
                   className="table-responsive"
                   style={{ maxHeight: "575px", overflow: "auto" }}
@@ -293,13 +264,13 @@ const OrderPage = (props) => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("")}>
-                                  All
+                                All
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("Buy")}>
-                                  Buy
+                                Buy
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderTypeFilterChange("Sell")}>
-                                  Sell
+                                Sell
                               </button>
                             </div>
                           )}
@@ -319,22 +290,22 @@ const OrderPage = (props) => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("")}>
-                                  All
+                                All
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("MARKET")}>
-                                  MARKET
+                                MARKET
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("LIMIT")}>
-                                  LIMIT
+                                LIMIT
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("STOP_LOSS")}>
-                                  STOP LOSS
+                                STOP LOSS
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("TAKE_PROFIT")}>
-                                  TAKE PROFIT
+                                TAKE PROFIT
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleOrderSubTypeFilterChange("STOP_LIMIT")}>
-                                  STOP LIMIT
+                                STOP LIMIT
                               </button>
                             </div>
                           )}
@@ -384,13 +355,13 @@ const OrderPage = (props) => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("")}>
-                                  All
+                                All
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("DAY")}>
-                                  Day
+                                Day
                               </button>
                               <button className="dropdown-item text-light bg-dark" onClick={() => handleTimeInForceFilterChange("GTC")}>
-                                  Good Till Cancelled (GTC)
+                                Good Till Cancelled (GTC)
                               </button>
                             </div>
                           )}
@@ -414,40 +385,40 @@ const OrderPage = (props) => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <button
-                                  className="dropdown-item text-light bg-dark"
-                                  onClick={() => handleStatusFilterChange("")}
+                                className="dropdown-item text-light bg-dark"
+                                onClick={() => handleStatusFilterChange("")}
                               >
-                                  All
+                                All
                               </button>
                               <button
-                                  className="dropdown-item text-light bg-dark"
-                                  onClick={() => handleStatusFilterChange("PENDING")}
+                                className="dropdown-item text-light bg-dark"
+                                onClick={() => handleStatusFilterChange("PENDING")}
                               >
-                                  Pending
+                                Pending
                               </button>
                               <button
-                                  className="dropdown-item text-light bg-dark"
-                                  onClick={() => handleStatusFilterChange("FILLED")}
+                                className="dropdown-item text-light bg-dark"
+                                onClick={() => handleStatusFilterChange("FILLED")}
                               >
-                                  Filled
+                                Filled
                               </button>
                               <button
-                                  className="dropdown-item text-light bg-dark"
-                                  onClick={() => handleStatusFilterChange("PARTIALLY_FILLED")}
+                                className="dropdown-item text-light bg-dark"
+                                onClick={() => handleStatusFilterChange("PARTIALLY_FILLED")}
                               >
-                                  Partially Filled
+                                Partially Filled
                               </button>
                               <button
-                                  className="dropdown-item text-light bg-dark"
-                                  onClick={() => handleStatusFilterChange("CANCELLED")}
+                                className="dropdown-item text-light bg-dark"
+                                onClick={() => handleStatusFilterChange("CANCELLED")}
                               >
-                                  Cancelled
+                                Cancelled
                               </button>
                               <button
-                                  className="dropdown-item text-light bg-dark"
-                                  onClick={() => handleStatusFilterChange("REJECTED")}
+                                className="dropdown-item text-light bg-dark"
+                                onClick={() => handleStatusFilterChange("REJECTED")}
                               >
-                                  Rejected
+                                Rejected
                               </button>
                             </div>
                           )}
@@ -479,41 +450,51 @@ const OrderPage = (props) => {
                       </tr>
                     </thead>
                     <tbody className="table-group-divider">
-                      {/* Render order data after sorting */}
-                      {sortedOrderData.slice(0, rowsToDisplay).map((item) => (
-                        <tr key={item._id}>
-                          <th>{item.company}</th>
-                          <td>{item.order_type}</td>
-                          <td>{item.order_sub_type}</td>
-                          <td>{item.quantity}</td>
-                          <td>{item.price}</td>
-                          <td>{item.limit_price}</td>
-                          <td>{item.stop_price}</td>
-                          <td>{item.take_profit_price}</td>
-                          <td>{item.time_in_force}</td>
-                          <td>{item.status}</td>
-                          <td>{item.filled_quantity}</td>
-                          <td>{item.average_fill_price}</td>
-                          <td>{formatDisplayDate(item.date)}</td>
-                          <td>{formatDisplayDate(item.order_updation_date)}</td>
+                      {/* New conditional rendering for table body */}
+                      {dataRows === 0 ? (
+                        <tr>
+                          <td colSpan="14" className="text-center" style={{ padding: "20px", height: "460px" }}>
+                            No orders found matching the current filters.
+                          </td>
                         </tr>
-                      ))}
-                      {/* Render empty rows to maintain minimum table height */}
-                      {dataRows < minRows &&
-                        Array(minRows - dataRows)
-                          .fill(null)
-                          .map((_, index) => (
-                            <tr key={`empty-${index}`}>
-                              <th>&nbsp;</th><td>&nbsp;</td><td>&nbsp;</td>
-                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-                              <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-                              <td>&nbsp;</td><td>&nbsp;</td>
+                      ) : (
+                        <>
+                          {sortedOrderData.slice(0, rowsToDisplay).map((item) => (
+                            <tr key={item._id}>
+                              <th>{item.company}</th>
+                              <td>{item.order_type}</td>
+                              <td>{item.order_sub_type}</td>
+                              <td>{item.quantity}</td>
+                              <td>{item.price}</td>
+                              <td>{item.limit_price}</td>
+                              <td>{item.stop_price}</td>
+                              <td>{item.take_profit_price}</td>
+                              <td>{item.time_in_force}</td>
+                              <td>{item.status}</td>
+                              <td>{item.filled_quantity}</td>
+                              <td>{item.average_fill_price}</td>
+                              <td>{formatDisplayDate(item.date)}</td>
+                              <td>{formatDisplayDate(item.order_updation_date)}</td>
                             </tr>
                           ))}
+                          {/* Render empty rows to maintain minimum table height */}
+                          {dataRows < minRows &&
+                            Array(minRows - dataRows)
+                              .fill(null)
+                              .map((_, index) => (
+                                <tr key={`empty-${index}`}>
+                                  <th>&nbsp;</th><td>&nbsp;</td><td>&nbsp;</td>
+                                  <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                                  <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                                  <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                                  <td>&nbsp;</td><td>&nbsp;</td>
+                                </tr>
+                              ))}
+                        </>
+                      )}
                     </tbody>
                   </table>
-                </div>)}
+                </div>
             </div>
           </div>
         </div>
