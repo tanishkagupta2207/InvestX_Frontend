@@ -10,25 +10,120 @@ const StockAnalysis = (props) => {
   const minRows = 7;
   const dataRows = portfolioData.stocks.length;
   const rowsToDisplay = Math.max(minRows, dataRows);
-  const stockLabels = portfolioData.stocks.map((stock) => stock.name);
-  const stockSymbols = portfolioData.stocks.map((stock) => stock.symbol);
+  const [stockLabels, setStockLabels] = useState([]);
+  const [stockSymbols, setStockSymbols] = useState([]);
+  const [stockValues, setStockValues] = useState([]);
+  const [profitPercentages, setProfitPercentages] = useState([]);
+  const [backgroundColors, setBackgroundColors] = useState([]);
   const [totalProfit, setTotalProfit] = useState(0);
 
-  const stockValues = portfolioData.stocks.map(
-    (stock) => stock.quantity * stock.current_price
-  );
-  const profitPercentages = portfolioData.stocks.map((stock) =>
-    parseFloat(
-      (
-        (((stock.current_price - stock.average_price) * stock.quantity) /
-          Math.abs(totalProfit)) *
-        100
-      ).toFixed(2)
-    )
-  );
-  const backgroundColors = stockLabels.map(
-    (_, index) => availableColors[index % availableColors.length]
-  );
+  const calculateTotal = useCallback((stocks) => {
+    let total = 0;
+    if (stocks && Array.isArray(stocks)) {
+      stocks.forEach((stock) => {
+        total += stock.quantity * stock.current_price;
+      });
+    }
+    return parseFloat(total.toFixed(2));
+  }, []);
+
+  const calculateTotalProfit = useCallback((stocks) => {
+    let total = 0;
+    if (stocks && Array.isArray(stocks)) {
+      stocks.forEach((stock) => {
+        total += (stock.current_price - stock.average_price) * stock.quantity;
+      });
+    }
+    return parseFloat(total.toFixed(4));
+  }, []);
+
+  useEffect(() => {
+    if (portfolioData && portfolioData.stocks) {
+      const stocks = portfolioData.stocks;
+      const newStockLabels = stocks.map((stock) => stock.name);
+      const newStockSymbols = stocks.map((stock) => stock.symbol);
+      const newStockValues = stocks.map(
+        (stock) => stock.quantity * stock.current_price
+      );
+      const newTotalProfit = calculateTotalProfit(stocks);
+      
+      const newProfitPercentages = stocks.map((stock) =>
+        parseFloat(
+          (
+            (((stock.current_price - stock.average_price) * stock.quantity) /
+              Math.abs(newTotalProfit || 1)) *
+            100
+          ).toFixed(2)
+        )
+      );
+
+      const newBackgroundColors = newStockLabels.map(
+        (_, index) => availableColors[index % availableColors.length]
+      );
+
+      setStockLabels(newStockLabels);
+      setStockSymbols(newStockSymbols);
+      setStockValues(newStockValues);
+      setTotalProfit(newTotalProfit);
+      setProfitPercentages(newProfitPercentages);
+      setBackgroundColors(newBackgroundColors);
+      setTotalValue(calculateTotal(stocks));
+    }
+  }, [portfolioData, availableColors, calculateTotal, calculateTotalProfit]);
+
+  const handleDownloadCSV = () => {
+    if (!portfolioData || !portfolioData.stocks || portfolioData.stocks.length === 0) {
+      alert("No data to download.");
+      return;
+    }
+
+    const stocks = portfolioData.stocks;
+    const header = [
+      "Company",
+      "Symbol",
+      "Quantity",
+      "Purchase Price",
+      "Current Price",
+      "Value",
+      "Profit Value",
+      "Profit Percentage",
+    ];
+    
+    // Add data rows
+    const rows = stocks.map((item) => {
+      const profitValue = parseFloat((item.current_price - item.average_price) * item.quantity).toFixed(4);
+      const profitPercentage = parseFloat(
+          ((((item.current_price - item.average_price) * item.quantity) / Math.abs(totalProfit || 1)) * 100)
+        ).toFixed(2);
+      
+      return [
+        `"${item.name.replace(/"/g, '""')}"`, // Handle commas and quotes
+        item.symbol,
+        item.quantity,
+        item.average_price,
+        item.current_price,
+        item.current_price * item.quantity,
+        profitValue,
+        profitPercentage + "%",
+      ].join(",");
+    });
+    
+    const csvContent = [
+      header.join(","),
+      ...rows,
+    ].join("\n");
+    
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "stock_holdings_analysis.csv");
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
 
   const datastocks = {
     labels: stockLabels,
@@ -59,6 +154,9 @@ const StockAnalysis = (props) => {
     plugins: {
       legend: {
         position: "right",
+        labels: {
+          color: "white",
+        },
       },
     },
   };
@@ -67,31 +165,26 @@ const StockAnalysis = (props) => {
     scales: {
       y: {
         beginAtZero: true,
+        ticks: { color: "white" },
+        grid: { color: "rgba(255, 255, 255, 0.1)" }
       },
+      x: {
+        ticks: { color: "white" },
+        grid: { color: "rgba(255, 255, 255, 0.1)" }
+      }
     },
+    plugins: {
+      legend: {
+        labels: {
+          color: "white"
+        }
+      }
+    }
   };
 
-  const calculateTotal = useCallback((stocks) => {
-    let total = 0;
-    stocks.forEach((stock) => {
-      total += stock.quantity * stock.current_price;
-    });
-    return total;
-  }, []);
-
-  const calculateTotalProfit = useCallback((stocks) => {
-    let total = 0;
-    stocks.forEach((stock) => {
-      total += (stock.current_price - stock.average_price) * stock.quantity;
-    });
-    total = parseFloat(total.toFixed(4));
-    return total;
-  }, []);
-
-  useEffect(() => {
-    setTotalProfit(calculateTotalProfit(portfolioData?.stocks || []));
-    setTotalValue(calculateTotal(portfolioData?.stocks || []));
-  }, [calculateTotalProfit, calculateTotal, portfolioData]);
+  if (!portfolioData) {
+    return null;
+  }
 
   return (
     <div>
@@ -114,7 +207,11 @@ const StockAnalysis = (props) => {
                 className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded"
                 style={{ height: "372px" }}
               >
-                <Pie data={datastocks} options={options} />
+                {portfolioData.stocks.length > 0 ? (
+                  <Pie data={datastocks} options={options} />
+                ) : (
+                  <p className="text-muted">No stocks to display in chart.</p>
+                )}
               </div>
               <p className="text-muted">Pie Chart for Stocks Distribution</p>
               <h5>
@@ -132,9 +229,13 @@ const StockAnalysis = (props) => {
                 className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded"
                 style={{ height: "372px" }}
               >
-                <Bar data={dataProfitPercentage} options={chartOptions} />
+                {portfolioData.stocks.length > 0 ? (
+                  <Bar data={dataProfitPercentage} options={chartOptions} />
+                ) : (
+                  <p className="text-muted">No stocks to display in chart.</p>
+                )}
               </div>
-              <p className="text-muted">Pie Chart for Stocks Distribution</p>
+              <p className="text-muted">Bar Chart for Stocks Profit/Loss</p>
               <h5>
                 Total Profit/loss in Stocks: <HiOutlineCurrencyRupee />{" "}
                 {totalProfit}
@@ -150,13 +251,17 @@ const StockAnalysis = (props) => {
         style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}
       >
         <div className="card bg-dark border-secondary">
+          <div className="card-header d-flex justify-content-between align-items-center">
+            <h4 className="card-title mb-0 text-light">Detailed Stock Holdings Overview</h4>
+            <button
+              className="btn btn-sm btn-outline-info"
+              onClick={handleDownloadCSV}
+            >
+              Download as CSV
+            </button>
+          </div>
           <div className="card-body text-light">
-            <h4 className="card-title">Detailed Stock Holdings Overview</h4>
-            <p className="text-muted" style={{ margin: "0px" }}>
-              Stock Holdings Overview
-            </p>
             <div className="table-responsive" style={{ maxHeight: "388px" }}>
-              {" "}
               <table className="table table-striped table-dark table-bordered">
                 <thead
                   style={{
@@ -183,8 +288,8 @@ const StockAnalysis = (props) => {
                     overflowY: dataRows > minRows ? "scroll" : "auto",
                   }}
                 >
-                  {portfolioData.stocks.slice(0, rowsToDisplay).map((item) => (
-                    <tr key={item.id}>
+                  {portfolioData.stocks.slice(0, rowsToDisplay).map((item, index) => (
+                    <tr key={item.id || index}>
                       <th>{item.name}</th>
                       <td>{item.symbol}</td>
                       <td>{item.quantity}</td>
@@ -214,7 +319,7 @@ const StockAnalysis = (props) => {
                           (
                             (((item.current_price - item.average_price) *
                               item.quantity) /
-                              Math.abs(totalProfit)) *
+                              Math.abs(totalProfit || 1)) *
                             100
                           ).toFixed(2)
                         )}
@@ -237,37 +342,40 @@ const StockAnalysis = (props) => {
                           <td>&nbsp;</td>
                         </tr>
                       ))}
-                  <tr>
-                    <td
-                      colSpan="5"
-                      style={{ textAlign: "right", fontWeight: "bold" }}
-                    >
-                      Total:
-                    </td>
-                    <td style={{ fontWeight: "bold" }}>
-                      {portfolioData.stocks
-                        .slice(0, rowsToDisplay)
-                        .reduce(
-                          (total, item) =>
-                            total + item.current_price * item.quantity,
-                          0
-                        )}
-                    </td>
-                    <td
-                      style={{ fontWeight: "bold" }}
-                      className={`card-text ${
-                        totalProfit >= 0 ? "text-success" : "text-danger"
-                      }`}
-                    >
-                      {totalProfit}
-                    </td>
-                  </tr>
+                  {portfolioData.stocks.length > 0 && (
+                    <tr>
+                      <td
+                        colSpan="5"
+                        style={{ textAlign: "right", fontWeight: "bold" }}
+                      >
+                        Total:
+                      </td>
+                      <td style={{ fontWeight: "bold" }}>
+                        {portfolioData.stocks
+                          .slice(0, rowsToDisplay)
+                          .reduce(
+                            (total, item) =>
+                              total + item.current_price * item.quantity,
+                            0
+                          ).toFixed(2)}
+                      </td>
+                      <td
+                        style={{ fontWeight: "bold" }}
+                        className={`card-text ${
+                          totalProfit >= 0 ? "text-success" : "text-danger"
+                        }`}
+                      >
+                        {totalProfit}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
+      <div>&nbsp;</div>
     </div>
   );
 };

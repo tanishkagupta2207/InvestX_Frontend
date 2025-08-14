@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import StockChart from "./StockChart";
+import AddToWatchlistModal from "../watchlistComponents/AddToWatchlistModal";
 
 // --- Helper Function to Format API Data ---
 const formatApiDataForChart = (apiData) => {
-  // (Keep the same formatting function as the previous example)
   if (!apiData || !Array.isArray(apiData)) return [];
   return apiData
     .sort((a, b) => new Date(a.date) - new Date(b.date))
@@ -26,6 +26,7 @@ const ChartWrapper = ({
   company_id,
   showAlert,
   inInWatchList,
+  watchlistName, // NEW: Added watchlistName prop
 }) => {
   const navigate = useNavigate();
   const [simplifyGraph, setSimplifyGraph] = useState(false);
@@ -33,16 +34,68 @@ const ChartWrapper = ({
   const [selectedRange, setSelectedRange] = useState("1Y");
   const [isLoading, setIsLoading] = useState(false);
   const availableRanges = ["1D", "5D", "1M", "6M", "1Y", "2Y"];
-  const [isWatchlistLoading, setIsWatchlistLoading] = useState(false);
+
   const [watchlistMessage, setWatchlistMessage] = useState("");
+  const [showWatchlistModal, setShowWatchlistModal] = useState(false);
+  const [isAddedToWatchlist, setIsAddedToWatchlist] = useState(inInWatchList); // NEW: State to track if it's in a watchlist
+
   const [company, setCompany] = useState(null);
   const [actionAllowed, setActionAllowed] = useState(false);
   const [marketEndedAlertShown, setMarketEndedAlertShown] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(inInWatchList);
 
-  useEffect(() => {
-    setIsInWatchlist(isInWatchlist);
-  }, [isInWatchlist]);
+  // Function to show the modal
+  const handleShowModal = () => {
+    setShowWatchlistModal(true);
+  };
+
+  // Function to close the modal and handle messages
+  const handleCloseModal = (message = "") => {
+    setShowWatchlistModal(false);
+    if (message) {
+      setWatchlistMessage(message);
+      setTimeout(() => setWatchlistMessage(""), 5000);
+    }
+  };
+
+  // NEW: Function to handle removal from watchlist
+  const handleRemoveFromWatchlist = async () => {
+    if (!company_id || !watchlistName) {
+      showAlert("Error: Missing company ID or watchlist name for removal.", "danger");
+      return;
+    }
+    setIsLoading(true);
+    setWatchlistMessage("");
+
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_HOST_URL}api/watchlist/remove`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            "auth-token": `${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            companyId: company_id,
+            watchlistName: watchlistName,
+          }),
+        }
+      );
+      const res = await response.json();
+      if (res.success) {
+        setWatchlistMessage(res.msg);
+        setIsAddedToWatchlist(false); // Update state on successful removal
+      } else {
+        setWatchlistMessage(`Error: ${res.msg || "Failed to remove from watchlist."}`);
+      }
+    } catch (error) {
+      console.error("Failed to remove from watchlist:", error);
+      setWatchlistMessage(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setWatchlistMessage(""), 5000);
+    }
+  };
 
   const fetchChartData = useCallback(async (symbol, range, company_id) => {
     setIsLoading(true);
@@ -194,161 +247,50 @@ const ChartWrapper = ({
     });
   };
 
-  const handleAddToWatchlist = async () => {
-    if (!company_id) {
-      console.error(
-        "Cannot add to watchlist: company_id is missing for",
-        stockSymbol
-      );
-      setWatchlistMessage("Error: Company details missing.");
-      return;
-    }
-    setIsWatchlistLoading(true);
-    setWatchlistMessage("");
-
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_HOST_URL}api/watchList/add`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "auth-token": `${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ companyId: company_id }),
-        }
-      );
-      const res = await response.json();
-      if (res.success) {
-        setWatchlistMessage(res.msg);
-        setIsInWatchlist(true);
-        setTimeout(() => setWatchlistMessage(""), 3000);
-      } else {
-        setWatchlistMessage(
-          `Error: ${res.msg || "Failed to add to watchlist."}`
-        );
-        setTimeout(() => setWatchlistMessage(""), 5000);
-      }
-    } catch (error) {
-      console.error("Failed to add to watchlist:", error);
-      setWatchlistMessage(`Error: ${error.message}`);
-      setTimeout(() => setWatchlistMessage(""), 5000);
-    } finally {
-      setIsWatchlistLoading(false);
-    }
-  };
-
-  const handleRemoveFromWatchlist = async () => {
-    console.log("Removing from watchlist:", stockSymbol);
-    if (!company_id) {
-      console.error(
-        "Cannot remove from watchlist: company_id is missing for",
-        stockSymbol
-      );
-      setWatchlistMessage("Error: Company details missing for removal.");
-      return;
-    }
-    setIsWatchlistLoading(true);
-    setWatchlistMessage("");
-
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_HOST_URL}api/watchList/remove`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            "auth-token": `${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({ companyId: company_id }),
-        }
-      );
-      const res = await response.json();
-      if (res.success) {
-        setWatchlistMessage(res.msg);
-        setIsInWatchlist(false);
-        setTimeout(() => setWatchlistMessage(""), 3000);
-      } else {
-        setWatchlistMessage(
-          `Error: ${res.msg || "Failed to remove from watchlist."}`
-        );
-        showAlert(res.msg || "Failed to remove from watchlist.", "danger");
-        setTimeout(() => setWatchlistMessage(""), 5000);
-      }
-    } catch (error) {
-      console.error("Failed to remove from watchlist:", error);
-      setWatchlistMessage(`Error: ${error.message}`);
-      setTimeout(() => setWatchlistMessage(""), 5000);
-    } finally {
-      setIsWatchlistLoading(false);
-    }
-  };
-
   return (
     <div className="col-12 mb-4">
       <div className="card bg-dark border-secondary h-100">
         <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <h5 className="mb-0 text-white">
-            {stockName} ({stockSymbol})
-          </h5>
-          {!isInWatchlist ? (
-            isWatchlistLoading ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                <span className="visually-hidden ms-1">Adding...</span>
-              </>
+          {/* Watchlist button placed next to the company name */}
+          <div className="d-flex align-items-center gap-2">
+            <h5 className="mb-0 text-white">
+              {stockName} ({stockSymbol})
+            </h5>
+            {isAddedToWatchlist ? (
+              <button
+                type="button"
+                className="btn btn-sm btn-outline-danger"
+                onClick={handleRemoveFromWatchlist}
+                disabled={isLoading}
+                title={`Remove from ${watchlistName}`}
+              >
+                - Watchlist
+              </button>
             ) : (
               <button
                 type="button"
                 className="btn btn-sm btn-outline-info"
-                style={{ marginRight: "auto" }}
-                onClick={handleAddToWatchlist}
-                disabled={isWatchlistLoading || isLoading}
+                onClick={handleShowModal}
+                disabled={isLoading}
                 title="Add to Watchlist"
               >
                 + Watchlist
               </button>
-            )
-          ) : isWatchlistLoading ? (
-            <>
-              <span
-                className="spinner-border spinner-border-sm"
-                role="status"
-                aria-hidden="true"
-              ></span>
-              <span className="visually-hidden ms-1">Removing...</span>
-            </>
-          ) : (
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-danger"
-              style={{ marginRight: "auto" }}
-              onClick={handleRemoveFromWatchlist}
-              disabled={isWatchlistLoading || isLoading}
-              title="Remove from Watchlist"
-            >
-              - Watchlist
-            </button>
-          )}
+            )}
+          </div>
+
+          {/* Status message */}
           {watchlistMessage && (
             <div
               className={`alert alert-${
-                watchlistMessage.startsWith("Error") ||
-                watchlistMessage.includes("removed from WatchList") ||
-                watchlistMessage.includes("already in WatchList")
-                  ? "danger"
-                  : "success"
+                watchlistMessage.includes("Error") ? "danger" : "success"
               } py-1 px-3 m-2 mb-0 text-center small`}
               role="alert"
             >
-              {" "}
-              {watchlistMessage}{" "}
+              {watchlistMessage}
             </div>
           )}
+
           <div
             className="btn-group btn-group-sm flex-wrap"
             role="group"
@@ -366,14 +308,13 @@ const ChartWrapper = ({
                 onClick={() => handleRangeChange(range)}
                 disabled={isLoading}
               >
-                {range}{" "}
+                {range}
               </button>
-            ))}{" "}
+            ))}
             <div
               className="form-check form-switch"
               style={{ marginLeft: "10px" }}
             >
-              {" "}
               <input
                 className="form-check-input"
                 type="checkbox"
@@ -382,35 +323,30 @@ const ChartWrapper = ({
                 checked={simplifyGraph}
                 onChange={handleToggleSimplify}
                 disabled={isLoading}
-              />{" "}
+              />
               <label
                 className="form-check-label text-white"
                 htmlFor="simplifyGraphSwitch"
               >
-                {" "}
-                Simplify Graph{" "}
-              </label>{" "}
+                Simplify Graph
+              </label>
             </div>
-          </div>{" "}
-        </div>{" "}
+          </div>
+        </div>
         <div
           className="card-body position-relative"
           style={{ minHeight: "380px" }}
         >
-          {" "}
           {isLoading && (
             <div
               className="position-absolute top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center bg-dark bg-opacity-75"
               style={{ zIndex: 10 }}
             >
-              {" "}
               <div className="spinner-border text-primary" role="status">
-                {" "}
-                <span className="visually-hidden">Loading...</span>{" "}
-              </div>{" "}
+                <span className="visually-hidden">Loading...</span>
+              </div>
             </div>
-          )}{" "}
-          {/* Pass simplifyGraph down */}{" "}
+          )}
           {!isLoading && (
             <StockChart
               stockData={{
@@ -420,20 +356,19 @@ const ChartWrapper = ({
               }}
               simplifyGraph={simplifyGraph}
             />
-          )}{" "}
+          )}
           {!isLoading && chartData.length === 0 && (
             <div className="d-flex align-items-center justify-content-center h-100 text-muted">
-              {" "}
-              Failed to load data or no data available.{" "}
+              Failed to load data or no data available.
             </div>
-          )}{" "}
-        </div>{" "}
+          )}
+        </div>
         <div className="card-footer bg-dark border-secondary-subtle d-flex justify-content-end gap-2">
           <button
             type="button"
             className="btn btn-success"
             onClick={() => handleTradeAction("BUY")}
-            disabled={isLoading || !actionAllowed} // Disable if chart data is loading
+            disabled={isLoading || !actionAllowed}
             aria-label={`Buy ${stockSymbol}`}
           >
             Buy
@@ -442,13 +377,22 @@ const ChartWrapper = ({
             type="button"
             className="btn btn-danger"
             onClick={() => handleTradeAction("SELL")}
-            disabled={isLoading || !actionAllowed} // Disable if chart data is loading
+            disabled={isLoading || !actionAllowed}
             aria-label={`Sell ${stockSymbol}`}
           >
             Sell
           </button>
         </div>
-      </div>{" "}
+      </div>
+
+      {/* Render the modal component */}
+      <AddToWatchlistModal
+        show={showWatchlistModal}
+        onClose={handleCloseModal}
+        company_id={company_id}
+        showAlert={showAlert}
+        stockName={stockName}
+      />
     </div>
   );
 };
