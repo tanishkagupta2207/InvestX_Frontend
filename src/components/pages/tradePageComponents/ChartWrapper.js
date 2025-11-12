@@ -23,7 +23,7 @@ const formatApiDataForChart = (apiData) => {
 const ChartWrapper = ({
   stockSymbol,
   stockName,
-  company_id,
+  security_id,
   showAlert,
   inInWatchList,
   watchlistName, // NEW: Added watchlistName prop
@@ -59,7 +59,7 @@ const ChartWrapper = ({
 
   // NEW: Function to handle removal from watchlist
   const handleRemoveFromWatchlist = async () => {
-    if (!company_id || !watchlistName) {
+    if (!security_id || !watchlistName) {
       showAlert("Error: Missing company ID or watchlist name for removal.", "danger");
       return;
     }
@@ -76,7 +76,7 @@ const ChartWrapper = ({
             "auth-token": `${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
-            companyId: company_id,
+            companyId: security_id,
             watchlistName: watchlistName,
           }),
         }
@@ -97,7 +97,7 @@ const ChartWrapper = ({
     }
   };
 
-  const fetchChartData = useCallback(async (symbol, range, company_id) => {
+  const fetchChartData = useCallback(async (symbol, range, security_id) => {
     setIsLoading(true);
     setChartData([]);
     try {
@@ -109,13 +109,14 @@ const ChartWrapper = ({
             "Content-Type": "application/json",
             "auth-token": `${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ company_id: company_id, range: range }),
+          body: JSON.stringify({ security_id: security_id, range: range }),
         }
       );
       const res = await response.json();
       if (res.success) {
         const formattedData = formatApiDataForChart(res.data);
         setChartData(formattedData);
+        console.log(`Fetched chart data for ${symbol} (${range}):`, formattedData);
       } else {
         console.error(
           `Error fetching data for ${symbol}: ${res.msg || res.errors[0]?.msg}`
@@ -134,7 +135,7 @@ const ChartWrapper = ({
     // eslint-disable-next-line
   }, []);
 
-  const fetchCompany = useCallback(async (company_id) => {
+  const fetchCompany = useCallback(async (security_id) => {
     try {
       const response = await fetch(
         `${process.env.REACT_APP_HOST_URL}api/stock/company`,
@@ -144,7 +145,7 @@ const ChartWrapper = ({
             "Content-Type": "application/json",
             "auth-token": `${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({ company_id: company_id }),
+          body: JSON.stringify({ security_id: security_id }),
         }
       );
       const res = await response.json();
@@ -211,16 +212,16 @@ const ChartWrapper = ({
   }, [showAlert, marketEndedAlertShown]);
 
   useEffect(() => {
-    if (company_id) {
-      fetchChartData(stockSymbol, selectedRange, company_id);
+    if (security_id) {
+      fetchChartData(stockSymbol, selectedRange, security_id);
     }
-  }, [company_id, selectedRange, fetchChartData, simplifyGraph, stockSymbol]);
+  }, [security_id, selectedRange, fetchChartData, simplifyGraph, stockSymbol]);
 
   useEffect(() => {
-    if (company_id) {
-      fetchCompany(company_id);
+    if (security_id) {
+      fetchCompany(security_id);
     }
-  }, [company_id, fetchCompany]);
+  }, [security_id, fetchCompany]);
 
   const handleRangeChange = (newRange) => {
     setSelectedRange(newRange);
@@ -231,7 +232,7 @@ const ChartWrapper = ({
   };
 
   const handleTradeAction = (action) => {
-    if (!company_id) {
+    if (!security_id) {
       console.error(
         "Cannot initiate trade: companyId is missing for",
         stockSymbol
@@ -389,7 +390,7 @@ const ChartWrapper = ({
       <AddToWatchlistModal
         show={showWatchlistModal}
         onClose={handleCloseModal}
-        company_id={company_id}
+        security_id={security_id}
         showAlert={showAlert}
         stockName={stockName}
       />

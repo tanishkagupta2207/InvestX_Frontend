@@ -116,7 +116,7 @@ function TradePage(props) {
                   key={stock.symbol}
                   stockSymbol={stock.symbol}
                   stockName={stock.name}
-                  company_id={stock.company_id}
+                  security_id={stock.security_id}
                   showAlert={props.showAlert}
                   inInWatchList={false}
                 />
