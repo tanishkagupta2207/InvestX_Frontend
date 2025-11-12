@@ -1,5 +1,6 @@
+// PortfolioPage.js
 import React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -7,8 +8,12 @@ import {
   Legend,
   registerables,
 } from "chart.js";
-import StockAnalysis from "../landing/portfolioComponents/StockAnalysis";
-import AssetCards from "../landing/portfolioComponents/AssetCards";
+
+import StockAnalysis from "./portfolioComponents/StockAnalysis";
+import AssetCards from "./portfolioComponents/AssetCards";
+import { usePortfolioData } from "./portfolioComponents/UsePortfolioData";
+import PortfolioAllocationChart from "./portfolioComponents/PortfolioAllocationChart";
+import MutualFundHoldingsAnalysis from "../pages/portfolioComponents/MutualFundsAnalysis";
 
 ChartJS.register(ArcElement, Tooltip, Legend, ...registerables);
 
@@ -27,53 +32,42 @@ const availableColors = [
 
 const PortfolioPage = (props) => {
   const userId = window.location.pathname.split("/").pop();
-  const [portfolioData, setPortfolioData] = useState(null);
+  
+  // *** STATE FOR TAB MANAGEMENT ***
+  const [activeTab, setActiveTab] = useState('stocks');
 
-  const fetchPortfolioData = async () => {
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_HOST_URL}api/portfolio/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      const res = await response.json();
-      if (res.success) {
-        setPortfolioData(res.data);
-      } else {
-        console.error(
-          `Error fetching Portfolio data for ${res.msg || res.errors[0]?.msg}`
-        );
-        props.showAlert(
-          res.msg || (res.errors && res.errors[0]?.msg) || "An error occurred",
-          "danger"
-        );
-      }
-    } catch (error) {
-      console.error("Error fetching chart data:", error);
-      props.showAlert(
-        "Something went wrong! Please try again later.",
-        "danger"
-      );
-    }
-  };
+  // Use the custom hook for all data fetching and calculations
+  const {
+    portfolioData,
+    isLoading,
+    totalValue,
+    cashHeld,
+    moneyInvested,
+    totalProfit,
+    xirr,
+    isPositiveChange,
+    chartAllocationData
+  } = usePortfolioData(userId, null, 'public', props.showAlert);
 
-  useEffect(() => {
-    fetchPortfolioData();
-    // eslint-disable-next-line
-  }, [userId]); // Added userId to dependency array to refetch if URL changes
+  // Render loading state if needed
+  if (isLoading) {
+      return (
+          <div style={{ backgroundColor: "black", minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
+              <h4 className="text-light">Loading Portfolio Data...</h4>
+          </div>
+      );
+  }
 
   return (
-    <div style={{ backgroundColor: "black", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <div style={{backgroundColor: "black", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center"}}>
       <main
         className="main-content"
         style={{
           padding: "20px",
           width: "100%",
+          maxWidth: "1400px",
           boxSizing: "border-box",
+          margin: "0 auto", 
         }}
       >
         <div className="container-fluid text-light">
@@ -82,20 +76,85 @@ const PortfolioPage = (props) => {
           </h1>
 
           {portfolioData && (
-            <AssetCards
-              portfolioData={portfolioData}
+            <div className="row g-3 mb-5">
+              <div className="col-lg-6 col-md-12 d-flex">
+                <PortfolioAllocationChart
+                    chartData={chartAllocationData}
+                    availableColors={availableColors}
+                />
+              </div>
+              
+              {/* Metric Cards (Total Value, Cash, Invested, XIRR) - 7 columns */}
+              <div className="col-lg-6 col-md-12 d-flex">
+                <AssetCards
+                    totalValue={totalValue}
+                    cashHeld={cashHeld}
+                    moneyInvested={moneyInvested}
+                    totalProfit={totalProfit}
+                    xirr={xirr}
+                    isPositiveChange={isPositiveChange}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* --- NEW TABBED NAVIGATION --- */}
+          { portfolioData && (
+            <div className="row mb-4">
+                <div className="col-12">
+                    <ul className="nav nav-tabs justify-content-center" style={{ borderBottom: "1px solid #363636" }}>
+                        <li className="nav-item">
+                            <button
+                                className={`nav-link ${activeTab === 'stocks' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('stocks')}
+                                style={{
+                                    backgroundColor: activeTab === 'stocks' ? '#212529' : 'transparent', // Darker background for active tab
+                                    color: activeTab === 'stocks' ? 'white' : '#adb5bd', // White text for active, light gray for inactive
+                                    borderColor: activeTab === 'stocks' ? '#363636 #363636 transparent' : 'transparent', // Highlight bottom border
+                                    border: '1px solid #363636',
+                                    borderBottom: activeTab === 'stocks' ? 'none' : '1px solid #363636' // Hide bottom border for active tab
+                                }}
+                            >
+                                Stock Holdings Analysis
+                            </button>
+                        </li>
+                        <li className="nav-item">
+                            <button
+                                className={`nav-link ${activeTab === 'mutualfunds' ? 'active' : ''}`}
+                                onClick={() => setActiveTab('mutualfunds')}
+                                style={{
+                                    backgroundColor: activeTab === 'mutualfunds' ? '#212529' : 'transparent',
+                                    color: activeTab === 'mutualfunds' ? 'white' : '#adb5bd',
+                                    borderColor: activeTab === 'mutualfunds' ? '#363636 #363636 transparent' : 'transparent',
+                                    border: '1px solid #363636',
+                                    borderBottom: activeTab === 'mutualfunds' ? 'none' : '1px solid #363636'
+                                }}
+                            >
+                                Mutual Fund Holdings Analysis
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+          )}
+          {/* Detailed Analysis (Conditional Rendering) */}
+          { portfolioData && activeTab === 'stocks' && (
+            <StockAnalysis
+              portfolioData={ portfolioData}
               availableColors={availableColors}
+              totalProfit={totalProfit}
+              showAlert={props.showAlert}
+            />
+          )}
+          { portfolioData && activeTab === 'mutualfunds' && (
+            <MutualFundHoldingsAnalysis
+              portfolioData={ portfolioData}
+              availableColors={availableColors}
+              totalProfit={totalProfit}
+              showAlert={props.showAlert}
             />
           )}
         </div>
-        {/* Row for Charts / Detailed Sections */}
-
-        {portfolioData && (
-          <StockAnalysis
-            portfolioData={portfolioData}
-            availableColors={availableColors}
-          />
-        )}
       </main>
     </div>
   );

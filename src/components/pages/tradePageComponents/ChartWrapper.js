@@ -116,7 +116,6 @@ const ChartWrapper = ({
       if (res.success) {
         const formattedData = formatApiDataForChart(res.data);
         setChartData(formattedData);
-        console.log(`Fetched chart data for ${symbol} (${range}):`, formattedData);
       } else {
         console.error(
           `Error fetching data for ${symbol}: ${res.msg || res.errors[0]?.msg}`

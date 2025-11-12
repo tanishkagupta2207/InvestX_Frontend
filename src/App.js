@@ -1,6 +1,7 @@
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { useState } from "react";
+import '@flaticon/flaticon-uicons/css/regular/rounded.css'; 
 import Home from "./components/Home/Home";
 import Signup from "./components/authentication/Signup";
 import Login from "./components/authentication/Login";
@@ -38,8 +39,8 @@ function App() {
               <Route exact path="/login" element={<Login showAlert={showAlert}/>} />
               <Route exact path="/signup" element={<Signup showAlert={showAlert}/>} />
               <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
-              <Route exact path="/trade" element={<TradePage showAlert={showAlert}/>} />
-              <Route exact path="/trade/action" element={<BuySellPage showAlert={showAlert}/>} />
+              <Route exact path="/stocks" element={<TradePage showAlert={showAlert}/>} />
+              <Route exact path="/stocks/action" element={<BuySellPage showAlert={showAlert}/>} />
               <Route exact path = '/orders' element={<OrderPage showAlert={showAlert}/>} />
               <Route exact path = '/transactions' element={<TransactionsPage showAlert={showAlert}/>} />
               <Route exact path = '/watchlist' element={<WatchListPage showAlert={showAlert}/>} />

@@ -6,14 +6,18 @@ import { HiOutlineCurrencyRupee } from "react-icons/hi2";
 const StockAnalysis = (props) => {
   const portfolioData = props.portfolioData;
   const availableColors = props.availableColors;
-  const [totalValue, setTotalValue] = useState(0);
   const minRows = 7;
   const dataRows = portfolioData.stocks.length;
   const rowsToDisplay = Math.max(minRows, dataRows);
+
+  // --- State Variables ---
+  const [totalValue, setTotalValue] = useState(0);
   const [stockLabels, setStockLabels] = useState([]);
   const [stockSymbols, setStockSymbols] = useState([]);
   const [stockValues, setStockValues] = useState([]);
-  const [profitPercentages, setProfitPercentages] = useState([]);
+  // Renamed for clarity: now stores ROI (%)
+  const [individualReturnPercentages, setIndividualReturnPercentages] =
+    useState([]);
   const [backgroundColors, setBackgroundColors] = useState([]);
   const [totalProfit, setTotalProfit] = useState(0);
 
@@ -34,28 +38,35 @@ const StockAnalysis = (props) => {
         total += (stock.current_price - stock.average_price) * stock.quantity;
       });
     }
-    return parseFloat(total.toFixed(4));
+    // Changed to 2 decimal places for consistency with MutualFundAnalysis
+    return parseFloat(total.toFixed(2)); 
   }, []);
 
   useEffect(() => {
     if (portfolioData && portfolioData.stocks) {
       const stocks = portfolioData.stocks;
+
+      // Data for the 'Stocks Breakdown' Pie Chart
       const newStockLabels = stocks.map((stock) => stock.name);
       const newStockSymbols = stocks.map((stock) => stock.symbol);
       const newStockValues = stocks.map(
         (stock) => stock.quantity * stock.current_price
       );
+
+      // Data for the 'Profit/Loss' Bar Chart
       const newTotalProfit = calculateTotalProfit(stocks);
       
-      const newProfitPercentages = stocks.map((stock) =>
-        parseFloat(
-          (
-            (((stock.current_price - stock.average_price) * stock.quantity) /
-              Math.abs(newTotalProfit || 1)) *
-            100
-          ).toFixed(2)
-        )
-      );
+      // *** CORRECTED PROFIT PERCENTAGE CALCULATION ***
+      // Calculate Individual Stock Percentage Return on Investment (ROI)
+      const newIndividualReturnPercentages = stocks.map((stock) => {
+        const investmentValue = stock.average_price * stock.quantity;
+        const currentProfit =
+          (stock.current_price - stock.average_price) * stock.quantity;
+        // Formula: (Profit / Investment Cost) * 100. Handle zero investment.
+        const percentageReturn =
+          investmentValue <= 0 ? 0 : (currentProfit / investmentValue) * 100;
+        return parseFloat(percentageReturn.toFixed(2));
+      });
 
       const newBackgroundColors = newStockLabels.map(
         (_, index) => availableColors[index % availableColors.length]
@@ -65,14 +76,19 @@ const StockAnalysis = (props) => {
       setStockSymbols(newStockSymbols);
       setStockValues(newStockValues);
       setTotalProfit(newTotalProfit);
-      setProfitPercentages(newProfitPercentages);
+      // Update state with new ROI calculation
+      setIndividualReturnPercentages(newIndividualReturnPercentages); 
       setBackgroundColors(newBackgroundColors);
       setTotalValue(calculateTotal(stocks));
     }
   }, [portfolioData, availableColors, calculateTotal, calculateTotalProfit]);
 
   const handleDownloadCSV = () => {
-    if (!portfolioData || !portfolioData.stocks || portfolioData.stocks.length === 0) {
+    if (
+      !portfolioData ||
+      !portfolioData.stocks ||
+      portfolioData.stocks.length === 0
+    ) {
       alert("No data to download.");
       return;
     }
@@ -86,44 +102,44 @@ const StockAnalysis = (props) => {
       "Current Price",
       "Value",
       "Profit Value",
-      "Profit Percentage",
+      "Profit Percentage (ROI)", // Updated Header
     ];
-    
+
     // Add data rows
     const rows = stocks.map((item) => {
-      const profitValue = parseFloat((item.current_price - item.average_price) * item.quantity).toFixed(4);
+      const investmentValue = item.average_price * item.quantity;
+      const profitValue = parseFloat(
+        (item.current_price - item.average_price) * item.quantity
+      ).toFixed(2); // Reduced to 2 decimal places
       const profitPercentage = parseFloat(
-          ((((item.current_price - item.average_price) * item.quantity) / Math.abs(totalProfit || 1)) * 100)
-        ).toFixed(2);
-      
+        investmentValue <= 0 ? 0 : (profitValue / investmentValue) * 100
+      ).toFixed(2); // *** CORRECTED ROI CALCULATION ***
+
       return [
         `"${item.name.replace(/"/g, '""')}"`, // Handle commas and quotes
         item.symbol,
         item.quantity,
         item.average_price,
         item.current_price,
-        item.current_price * item.quantity,
+        (item.current_price * item.quantity).toFixed(2), // Fixed to 2 decimal places
         profitValue,
         profitPercentage + "%",
       ].join(",");
     });
-    
-    const csvContent = [
-      header.join(","),
-      ...rows,
-    ].join("\n");
-    
+
+    const csvContent = [header.join(","), ...rows].join("\n");
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "stock_holdings_analysis.csv");
+    link.setAttribute("download", "Stock_holdings_analysis.csv");
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    props.showAlert("CSV downloaded successfully!", "success");
   };
-  
 
   const datastocks = {
     labels: stockLabels,
@@ -141,8 +157,10 @@ const StockAnalysis = (props) => {
     labels: stockSymbols,
     datasets: [
       {
-        label: "Profit Percentage Allocation",
-        data: profitPercentages,
+        // Updated label to reflect ROI
+        label: "Individual Stock Percentage Return (ROI)", 
+        // Using the new ROI state
+        data: individualReturnPercentages, 
         backgroundColor: backgroundColors,
         borderWidth: 1,
       },
@@ -164,37 +182,38 @@ const StockAnalysis = (props) => {
   const chartOptions = {
     scales: {
       y: {
-        beginAtZero: true,
+        beginAtZero: false, // ROI can be negative
         ticks: { color: "white" },
-        grid: { color: "rgba(255, 255, 255, 0.1)" }
+        grid: { color: "rgba(255, 255, 255, 0.1)" },
       },
       x: {
         ticks: { color: "white" },
-        grid: { color: "rgba(255, 255, 255, 0.1)" }
-      }
+        grid: { color: "rgba(255, 255, 255, 0.1)" },
+      },
     },
     plugins: {
       legend: {
         labels: {
-          color: "white"
-        }
-      }
-    }
+          color: "white",
+        },
+      },
+    },
   };
 
-  if (!portfolioData) {
+  if (!portfolioData || !portfolioData.stocks) {
     return null;
   }
 
   return (
     <div>
+      {" "}
       <h1
         className="text-light"
         style={{ textAlign: "center", marginBottom: "20px" }}
       >
         Stocks Holding Analysis
       </h1>
-
+      {/* Charts Section */}
       <div
         className="row g-3"
         style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}
@@ -215,7 +234,8 @@ const StockAnalysis = (props) => {
               </div>
               <p className="text-muted">Pie Chart for Stocks Distribution</p>
               <h5>
-                Total Value of Stocks: <HiOutlineCurrencyRupee /> {totalValue}
+                Total Value of Stocks: <HiOutlineCurrencyRupee />{" "}
+                {totalValue.toFixed(2)}
               </h5>
             </div>
           </div>
@@ -224,7 +244,7 @@ const StockAnalysis = (props) => {
         <div className="col-lg-6">
           <div className="card bg-dark border-secondary">
             <div className="card-body text-light">
-              <h4 className="card-title">Stocks Profit Percentage Breakdown</h4>
+              <h4 className="card-title">Individual Stock Percentage Return</h4>
               <div
                 className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded"
                 style={{ height: "372px" }}
@@ -235,10 +255,12 @@ const StockAnalysis = (props) => {
                   <p className="text-muted">No stocks to display in chart.</p>
                 )}
               </div>
-              <p className="text-muted">Bar Chart for Stocks Profit/Loss</p>
+              <p className="text-muted">
+                Bar Chart for Individual Stock Return on Investment
+              </p>
               <h5>
                 Total Profit/loss in Stocks: <HiOutlineCurrencyRupee />{" "}
-                {totalProfit}
+                {totalProfit.toFixed(2)}
               </h5>
             </div>
           </div>
@@ -246,13 +268,16 @@ const StockAnalysis = (props) => {
       </div>
       <div>&nbsp;</div>
 
+      {/* Detailed Holdings Table */}
       <div
         className="row g-3"
         style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}
       >
         <div className="card bg-dark border-secondary">
           <div className="card-header d-flex justify-content-between align-items-center">
-            <h4 className="card-title mb-0 text-light">Detailed Stock Holdings Overview</h4>
+            <h4 className="card-title mb-0 text-light">
+              Detailed Stock Holdings Overview
+            </h4>
             <button
               className="btn btn-sm btn-outline-info"
               onClick={handleDownloadCSV}
@@ -279,7 +304,7 @@ const StockAnalysis = (props) => {
                     <th>Current Price</th>
                     <th>Value</th>
                     <th>Profit Value</th>
-                    <th>Profit Percentage</th>
+                    <th>Profit Percentage (ROI)</th>
                   </tr>
                 </thead>
                 <tbody
@@ -288,45 +313,49 @@ const StockAnalysis = (props) => {
                     overflowY: dataRows > minRows ? "scroll" : "auto",
                   }}
                 >
-                  {portfolioData.stocks.slice(0, rowsToDisplay).map((item, index) => (
-                    <tr key={item.id || index}>
-                      <th>{item.name}</th>
-                      <td>{item.symbol}</td>
-                      <td>{item.quantity}</td>
-                      <td>{item.average_price}</td>
-                      <td>{item.current_price}</td>
-                      <td>{item.current_price * item.quantity}</td>
-                      <td
-                        className={`card-text ${
-                          item.current_price - item.average_price >= 0
-                            ? "text-success"
-                            : "text-danger"
-                        }`}
-                      >
-                        {parseFloat(
-                          (item.current_price - item.average_price) *
-                            item.quantity
-                        ).toFixed(4)}
-                      </td>
-                      <td
-                        className={`card-text ${
-                          item.current_price - item.average_price >= 0
-                            ? "text-success"
-                            : "text-danger"
-                        }`}
-                      >
-                        {parseFloat(
-                          (
-                            (((item.current_price - item.average_price) *
-                              item.quantity) /
-                              Math.abs(totalProfit || 1)) *
-                            100
-                          ).toFixed(2)
-                        )}
-                        %
-                      </td>
-                    </tr>
-                  ))}
+                  {portfolioData.stocks
+                    .slice(0, rowsToDisplay)
+                    .map((item, index) => {
+                      const profitValue =
+                        (item.current_price - item.average_price) *
+                        item.quantity;
+                      const investmentValue =
+                        item.average_price * item.quantity;
+                      const profitPercentage =
+                        investmentValue <= 0
+                          ? 0
+                          : (profitValue / investmentValue) * 100;
+                      const isPositive = profitValue >= 0;
+
+                      return (
+                        <tr key={item.id || index}>
+                          <th>{item.name}</th>
+                          <td>{item.symbol}</td>
+                          <td>{item.quantity}</td>
+                          <td>{item.average_price.toFixed(4)}</td>
+                          <td>{item.current_price.toFixed(4)}</td>
+                          <td>
+                            <HiOutlineCurrencyRupee size={16} />
+                            {(item.current_price * item.quantity).toFixed(2)}
+                          </td>
+                          <td
+                            className={`card-text ${
+                              isPositive ? "text-success" : "text-danger"
+                            }`}
+                          >
+                            <HiOutlineCurrencyRupee size={16} />
+                            {profitValue.toFixed(2)}
+                          </td>
+                          <td
+                            className={`card-text ${
+                              isPositive ? "text-success" : "text-danger"
+                            }`}
+                          >
+                            {profitPercentage.toFixed(2)}%
+                          </td>
+                        </tr>
+                      );
+                    })}
                   {dataRows < minRows &&
                     Array(minRows - dataRows)
                       .fill(null)
@@ -345,19 +374,10 @@ const StockAnalysis = (props) => {
                   {portfolioData.stocks.length > 0 && (
                     <tr>
                       <td
-                        colSpan="5"
+                        colSpan="6"
                         style={{ textAlign: "right", fontWeight: "bold" }}
                       >
                         Total:
-                      </td>
-                      <td style={{ fontWeight: "bold" }}>
-                        {portfolioData.stocks
-                          .slice(0, rowsToDisplay)
-                          .reduce(
-                            (total, item) =>
-                              total + item.current_price * item.quantity,
-                            0
-                          ).toFixed(2)}
                       </td>
                       <td
                         style={{ fontWeight: "bold" }}
@@ -365,7 +385,17 @@ const StockAnalysis = (props) => {
                           totalProfit >= 0 ? "text-success" : "text-danger"
                         }`}
                       >
-                        {totalProfit}
+                        <HiOutlineCurrencyRupee size={16} />
+                        {totalProfit.toFixed(2)}
+                      </td>
+                      <td
+                        style={{ fontWeight: "bold" }}
+                        className={`card-text ${
+                          totalProfit >= 0 ? "text-success" : "text-danger"
+                        }`}
+                      >
+                        {/* Overall Portfolio ROI: (Total Profit / Total Investment) * 100 */}
+                        {((totalProfit / (totalValue - totalProfit)) * 100).toFixed(2)}%
                       </td>
                     </tr>
                   )}
