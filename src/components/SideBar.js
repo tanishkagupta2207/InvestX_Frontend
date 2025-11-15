@@ -18,6 +18,7 @@ import { MdAccountBalance } from "react-icons/md";
 // We will use 992px (lg breakpoint) as the threshold for the full fixed sidebar.
 const LARGE_SCREEN_MIN_WIDTH = 992;
 const SIDEBAR_WIDTH = '280px';
+const ACCENT_COLOR = 'rgb(9, 96, 29)';
 
 const SideBar = () => {
   const unreadNotifications = 10;
@@ -103,9 +104,9 @@ const SideBar = () => {
       >
           <div className="d-flex flex-column p-4 h-100">
 
-              <div className="sidebar-brand mb-4">
-                  <Link to="/" className="h4 text-decoration-none text-white fw-bold">
-                      InvestX
+              <div className="sidebar-brand mb-4" style={{color: ACCENT_COLOR}}>
+                  <Link to="/" className="h4 text-decoration-none text-white fw-bold" style={{color: ACCENT_COLOR}}>
+                      <span style={{color: ACCENT_COLOR}}>InvestX</span>
                   </Link>
               </div>
 

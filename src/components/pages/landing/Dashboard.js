@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useState} from "react";
-import SideBar from "../SideBar";
+import SideBar from "../../SideBar";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -9,11 +9,11 @@ import {
   registerables,
 } from "chart.js";
 
-import { usePortfolioData } from "../pages/portfolioComponents/UsePortfolioData"; 
-import StockAnalysis from "../pages/portfolioComponents/StockAnalysis";
-import AssetCards from "../pages/portfolioComponents/AssetCards";
-import PortfolioAllocationChart from "../pages/portfolioComponents/PortfolioAllocationChart";
-import MutualFundHoldingsAnalysis from "../pages/portfolioComponents/MutualFundsAnalysis";
+import { usePortfolioData } from "../portfolioComponents/UsePortfolioData"; 
+import StockAnalysis from "../portfolioComponents/StockAnalysis";
+import AssetCards from "../portfolioComponents/AssetCards";
+import PortfolioAllocationChart from "../portfolioComponents/PortfolioAllocationChart";
+import MutualFundHoldingsAnalysis from "../portfolioComponents/MutualFundsAnalysis";
 
 ChartJS.register(ArcElement, Tooltip, Legend, ...registerables);
 

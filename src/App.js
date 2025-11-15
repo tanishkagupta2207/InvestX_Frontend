@@ -3,10 +3,11 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { useState } from "react";
 import '@flaticon/flaticon-uicons/css/regular/rounded.css'; 
 import Home from "./components/Home/Home";
+import About from "./components/Home/About";
 import Signup from "./components/authentication/Signup";
 import Login from "./components/authentication/Login";
 import Alert from "./components/Alert";
-import Dashboard from "./components/landing/Dashboard";
+import Dashboard from "./components/pages/landing/Dashboard";
 import TradePage from "./components/pages/TradePage";
 import BuySellPage from "./components/pages/BuySellPage";
 import OrderPage from "./components/pages/OrdersPage";
@@ -14,6 +15,8 @@ import TransactionsPage from "./components/pages/TransactionsPage";
 import WatchListPage from "./components/pages/WatchListPage";
 import PortfolioPage from "./components/pages/PortfolioPage";
 import AccountPage from "./components/pages/AccountPage";
+import PrivacyPolicy from "./components/Home/PrivacyPolicy";
+import ContactUs from "./components/Home/ContactUs";
 
 function App() {
 
@@ -35,7 +38,9 @@ function App() {
           <div >
             <Routes>
               <Route exact path="/" element={<Home/>} />
-              {/* <Route exact path="/about" element={<About />} /> */}
+              <Route exact path="/about" element={<About />} />
+              <Route exact path="/privacy" element={<PrivacyPolicy />} />
+              <Route exact path="/contact" element={<ContactUs />} />
               <Route exact path="/login" element={<Login showAlert={showAlert}/>} />
               <Route exact path="/signup" element={<Signup showAlert={showAlert}/>} />
               <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
