@@ -5,7 +5,7 @@ import { HiOutlineCurrencyRupee } from "react-icons/hi2";
 const MutualFundHoldingsAnalysis = (props) => {
   const portfolioData = props.portfolioData;
   const availableColors = props.availableColors;
-  const minRows = 7; // Minimum rows to display in the table
+  const minRows = 5; // Minimum rows to display in the table
   const dataRows = portfolioData.mutualFunds?.length || 0;
   const rowsToDisplay = Math.max(minRows, dataRows);
 

@@ -17,6 +17,7 @@ import PortfolioPage from "./components/pages/PortfolioPage";
 import AccountPage from "./components/pages/AccountPage";
 import PrivacyPolicy from "./components/Home/PrivacyPolicy";
 import ContactUs from "./components/Home/ContactUs";
+import MutualFundPage from "./components/pages/MutualFundPage";
 
 function App() {
 
@@ -40,12 +41,13 @@ function App() {
               <Route exact path="/" element={<Home/>} />
               <Route exact path="/about" element={<About />} />
               <Route exact path="/privacy" element={<PrivacyPolicy />} />
-              <Route exact path="/contact" element={<ContactUs />} />
+              <Route exact path="/contact" element={<ContactUs showAlert={showAlert}/>} />
               <Route exact path="/login" element={<Login showAlert={showAlert}/>} />
               <Route exact path="/signup" element={<Signup showAlert={showAlert}/>} />
               <Route exact path="/dashboard" element={<Dashboard showAlert={showAlert}/>} />
               <Route exact path="/stocks" element={<TradePage showAlert={showAlert}/>} />
-              <Route exact path="/stocks/action" element={<BuySellPage showAlert={showAlert}/>} />
+              <Route exact path="/trade/action" element={<BuySellPage showAlert={showAlert}/>} />
+              <Route exact path="/mutualfunds" element={<MutualFundPage showAlert={showAlert}/>} />
               <Route exact path = '/orders' element={<OrderPage showAlert={showAlert}/>} />
               <Route exact path = '/transactions' element={<TransactionsPage showAlert={showAlert}/>} />
               <Route exact path = '/watchlist' element={<WatchListPage showAlert={showAlert}/>} />

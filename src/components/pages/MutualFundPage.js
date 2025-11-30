@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useCallback } from "react"; // Added useCallback
+import React, { useState, useEffect, useCallback } from "react";
 import SideBar from "../SideBar";
-import ChartWrapper from "./tradePageComponents/ChartWrapper";
+import MutualFundChartWrapper from "./tradePageComponents/MutualFundChartWrapper"; 
 
 const SIDEBAR_WIDTH = "280px";
 const LG_BREAKPOINT = 992;
 const CATEGORY_TABS_BREAKPOINT = 768;
 
-// --- Main Trade Page Component ---
-function TradePage(props) {
-  const [selectedCategory, setSelectedCategory] = useState("Technology");
-  const [stocksToDisplay, setStocksToDisplay] = useState([]);
+function MutualFundPage(props) {
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [fundsToDisplay, setFundsToDisplay] = useState([]);
   const [categoriesData, setCategoriesData] = useState({});
   const [categoryNames, setCategoryNames] = useState([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const isMobileView = windowWidth < CATEGORY_TABS_BREAKPOINT;
 
-  // Categories/Stocks Data
+  // --- Fetch Categories ---
   const fetchCategoriesData = async () => {
     try {
+      // Changed endpoint to /api/mutualfund/categories
       const response = await fetch(
-        `${process.env.REACT_APP_HOST_URL}api/stock/categories`,
+        `${process.env.REACT_APP_HOST_URL}api/mutualfund/categories`,
         {
           method: "GET",
           headers: {
@@ -33,14 +33,15 @@ function TradePage(props) {
         setCategoriesData(res.data);
         const names = Object.keys(res.data);
         setCategoryNames(names);
+        // Select first category by default if available
         if (!names.includes(selectedCategory) && names.length > 0) {
             setSelectedCategory(names[0]);
         }
       } else {
-        props.showAlert(res.msg || "An error occurred", "danger");
+        props.showAlert(res.msg || "An error occurred fetching categories", "danger");
       }
     } catch (error) {
-      console.error("Error Fetching Details: ", error);
+      console.error("Error Fetching MF Details: ", error);
       props.showAlert("Something went wrong! Please try again later.", "danger");
     }
   };
@@ -62,9 +63,9 @@ function TradePage(props) {
 
   useEffect(() => {
     if (selectedCategory) {
-      setStocksToDisplay(categoriesData[selectedCategory] || []);
+      setFundsToDisplay(categoriesData[selectedCategory] || []);
     } else {
-      setStocksToDisplay([]);
+      setFundsToDisplay([]);
     }
   }, [selectedCategory, categoriesData]);
 
@@ -76,8 +77,8 @@ function TradePage(props) {
     setSelectedCategory(event.target.value);
   }, []);
 
+  // --- Styling Constants ---
   const mainContentMarginLeft = windowWidth >= LG_BREAKPOINT ? SIDEBAR_WIDTH : '0';
-
   const mainContentStyle = {
     marginLeft: mainContentMarginLeft,
     padding: windowWidth >= LG_BREAKPOINT ? "20px 50px 20px 20px" : "20px 15px",
@@ -85,8 +86,6 @@ function TradePage(props) {
     backgroundColor: "#212529",
     minHeight: "100vh",
   };
-
-  // Styles
   const ACTIVE_TAB_BG = '#343a40';
   const INACTIVE_TEXT_COLOR = '#adb5bd';
   const BORDER_COLOR = '#363636';
@@ -105,7 +104,9 @@ function TradePage(props) {
       textAlign: 'center',
   });
 
+  // --- Navigation UI ---
   const CategoryNavigation = () => {
+    // If many categories, you might want to slice differently or use a scrollable container
     const firstRow = categoryNames.slice(0, 5);
     const secondRow = categoryNames.slice(5);
 
@@ -138,7 +139,7 @@ function TradePage(props) {
                   onClick={() => handleCategorySelect(category)}
                   style={tabStyle(category)}
                 >
-                  {category}
+                  {category.replace(/_/g, " ")} {/* Beautify category names (e.g., Large_Cap -> Large Cap) */}
                 </button>
               </li>
             ))}
@@ -154,7 +155,7 @@ function TradePage(props) {
                                 onClick={() => handleCategorySelect(category)}
                                 style={tabStyle(category)}
                             >
-                                {category}
+                                {category.replace(/_/g, " ")}
                             </button>
                         </li>
                     ))}
@@ -165,12 +166,11 @@ function TradePage(props) {
     );
   };
 
-
   return (
     <div data-bs-theme="dark" style={{ minHeight: "100vh" }}>
       <SideBar />
       <div className="py-4" style={mainContentStyle}>
-        <h1 className="text-center text-white mb-3">Stock Trading Dashboard</h1>
+        <h1 className="text-center text-white mb-3">Mutual Funds Dashboard</h1>
 
         <div className="mb-4 p-3 bg-dark rounded border border-secondary">
           <h3 className="text-white mb-3">Select Category:</h3>
@@ -178,31 +178,31 @@ function TradePage(props) {
         </div>
 
         {selectedCategory && (
-          <h2 className="text-white mt-4 mb-3">{`Stocks in ${selectedCategory}`}</h2>
+          <h2 className="text-white mt-4 mb-3">{`${selectedCategory.replace(/_/g, " ")} Funds`}</h2>
         )}
         
         <div className="row">
-          {stocksToDisplay.length > 0
-            ? stocksToDisplay.map((stock) => (
-                <ChartWrapper
-                  key={stock.symbol}
-                  stockSymbol={stock.symbol}
-                  stockName={stock.name}
-                  security_id={stock.security_id}
+          {fundsToDisplay.length > 0
+            ? fundsToDisplay.map((fund) => (
+                <MutualFundChartWrapper
+                  key={fund.security_id}
+                  fundName={fund.name}
+                  fundHouse={fund.fund_house} // Mutual funds usually have a Fund House
+                  security_id={fund.security_id}
                   showAlert={props.showAlert}
                 />
               ))
             : selectedCategory && (
                 <div className="col-12">
                   <div className="alert alert-info">
-                    No stocks found for this category. Select one above.
+                    No mutual funds found for this category.
                   </div>
                 </div>
               )}
           {!selectedCategory && (
             <div className="col-12">
               <div className="alert alert-secondary">
-                Please select a category to view stocks.
+                Please select a category to view mutual funds.
               </div>
             </div>
           )}
@@ -212,4 +212,4 @@ function TradePage(props) {
   );
 }
 
-export default TradePage;
+export default MutualFundPage;
