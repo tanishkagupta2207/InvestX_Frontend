@@ -66,7 +66,7 @@ const MutualFundChartWrapper = ({ fundName, fundHouse, security_id, showAlert })
   
   // Valid ranges for Mutual Funds: 1M, 6M, 1Y, 2Y
   const [selectedRange, setSelectedRange] = useState("1Y"); 
-  const availableRanges = ["1M", "6M", "1Y", "2Y"];
+  const availableRanges = ["1M", "6M", "1Y", "2Y", "3Y"];
   
   const [isLoading, setIsLoading] = useState(false);
   const [watchlistMessage, setWatchlistMessage] = useState("");

@@ -244,5 +244,8 @@ export const useOrderLogic = (props) => {
     // Sorting info
     sortBy,
     sortOrder,
+
+    // Fetching function (if needed externally)
+    fetchOrderData,
   };
 };

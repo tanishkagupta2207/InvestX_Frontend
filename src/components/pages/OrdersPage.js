@@ -31,6 +31,7 @@ const OrderPage = (props) => {
     showOrderSubTypeFilterDropdown,
     showTimeInForceFilterDropdown,
     showStatusFilterDropdown,
+    fetchOrderData,
   } = useOrderLogic(props);
 
   return (
@@ -86,7 +87,7 @@ const OrderPage = (props) => {
         </div>
         {/* Render the modal component */}
         {showDetailsModal && (
-          <OrderDetailsModal order={selectedOrder} onClose={handleModalClose} />
+          <OrderDetailsModal order={selectedOrder} onClose={handleModalClose} showAlert={props.showAlert} onOrderUpdate={fetchOrderData} />
         )}
       </main>
     </div>

@@ -402,7 +402,7 @@ function StockTradeForm({ action, security, showAlert }) {
     const baseBody = {
       action: action,
       quantity: quantity,
-      companyId: security.companyId,
+      security_id: security.companyId,
     };
 
     if (orderType === "MARKET") {

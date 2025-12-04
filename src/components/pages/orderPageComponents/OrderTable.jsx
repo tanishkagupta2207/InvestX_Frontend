@@ -1,13 +1,13 @@
-import React from 'react';
-import FilterDropdown from './FilterDropdown';
+import React from "react";
+import FilterDropdown from "./FilterDropdown";
 import { formatDisplayDate } from "../../utils/dateFormatter";
-import { 
-  orderTypes, 
-  orderSubTypes, 
-  timeInForces, 
+import {
+  orderTypes,
+  orderSubTypes,
+  timeInForces,
   orderStatuses,
-  assetTypes
-} from './UseOrderLogic'; // Import static options
+  assetTypes,
+} from "./UseOrderLogic"; // Import static options
 
 const OrderTable = ({
   // Data props
@@ -15,13 +15,13 @@ const OrderTable = ({
   dataRows,
   rowsToDisplay,
   minRows,
-  
+
   // Handlers and State
   handleRowClick,
   handleSort,
   sortBy,
   sortOrder,
-  
+
   // Filter props
   securityTypeFilter,
   orderTypeFilter,
@@ -39,8 +39,7 @@ const OrderTable = ({
   showTimeInForceFilterDropdown,
   showStatusFilterDropdown,
 }) => {
-  
-  const getSortIndicator = (column) => 
+  const getSortIndicator = (column) =>
     sortBy === column ? (sortOrder === "asc" ? "▲" : "▼") : "";
 
   return (
@@ -59,13 +58,13 @@ const OrderTable = ({
         >
           <tr>
             <FilterDropdown
-                show={showSecurityTypeFilterDropdown}
-                toggle={securityTypeHandlers.toggle}
-                handleSelect={securityTypeHandlers.handle}
-                currentFilter={securityTypeFilter}
-                options={assetTypes}
-                className="security-type"
-                title="Asset Type"
+              show={showSecurityTypeFilterDropdown}
+              toggle={securityTypeHandlers.toggle}
+              handleSelect={securityTypeHandlers.handle}
+              currentFilter={securityTypeFilter}
+              options={assetTypes}
+              className="security-type"
+              title="Asset Type"
             />
             <th>Asset Name</th>
 
@@ -92,15 +91,21 @@ const OrderTable = ({
             />
 
             {/* Sortable Header: Quantity */}
-            <th onClick={() => handleSort("quantity")} style={{ cursor: "pointer", position: "relative" }}>
+            <th
+              onClick={() => handleSort("quantity")}
+              style={{ cursor: "pointer", position: "relative" }}
+            >
               Quantity {getSortIndicator("quantity")}
             </th>
-            
+
             {/* Sortable Header: Price */}
-            <th onClick={() => handleSort("price")} style={{ cursor: "pointer", position: "relative" }}>
+            <th
+              onClick={() => handleSort("price")}
+              style={{ cursor: "pointer", position: "relative" }}
+            >
               Price {getSortIndicator("price")}
             </th>
-            
+
             {/* Time in Force Filter */}
             <FilterDropdown
               show={showTimeInForceFilterDropdown}
@@ -124,22 +129,34 @@ const OrderTable = ({
             />
 
             {/* Sortable Header: Filled Quantity */}
-            <th onClick={() => handleSort("filled_quantity")} style={{ cursor: "pointer", position: "relative" }}>
+            <th
+              onClick={() => handleSort("filled_quantity")}
+              style={{ cursor: "pointer", position: "relative" }}
+            >
               Filled Qty {getSortIndicator("filled_quantity")}
             </th>
-            
+
             {/* Sortable Header: Average Fill Price */}
-            <th onClick={() => handleSort("average_fill_price")} style={{ cursor: "pointer", position: "relative" }}>
+            <th
+              onClick={() => handleSort("average_fill_price")}
+              style={{ cursor: "pointer", position: "relative" }}
+            >
               Avg Fill Price {getSortIndicator("average_fill_price")}
             </th>
-            
+
             {/* Sortable Header: Order Date */}
-            <th onClick={() => handleSort("date")} style={{ cursor: "pointer", position: "relative" }}>
+            <th
+              onClick={() => handleSort("date")}
+              style={{ cursor: "pointer", position: "relative" }}
+            >
               Order Date {getSortIndicator("date")}
             </th>
-            
+
             {/* Sortable Header: Order Updation Date */}
-            <th onClick={() => handleSort("order_updation_date")} style={{ cursor: "pointer", position: "relative" }}>
+            <th
+              onClick={() => handleSort("order_updation_date")}
+              style={{ cursor: "pointer", position: "relative" }}
+            >
               Updation Date {getSortIndicator("order_updation_date")}
             </th>
           </tr>
@@ -163,7 +180,11 @@ const OrderTable = ({
                   onClick={() => handleRowClick(item)}
                   style={{ cursor: "pointer" }}
                 >
-                  <th>{item.security_type==="company"? "Company Stock": "Mutual Fund"}</th>
+                  <th>
+                    {item.security_type === "company"
+                      ? "Company Stock"
+                      : "Mutual Fund"}
+                  </th>
                   <td>{item.security_identifier}</td>
                   <td>{item.order_type}</td>
                   <td>{item.order_sub_type}</td>
@@ -185,9 +206,15 @@ const OrderTable = ({
               {dataRows < minRows &&
                 Array(minRows - dataRows)
                   .fill(null)
-                  .map((_, index) => (
-                    <tr key={`empty-${index}`}>
-                      {Array(12).fill(<td key={`empty-cell-${index}-col`}>&nbsp;</td>)}
+                  .map((_, rowIndex) => (
+                    <tr key={`empty-${rowIndex}`}>
+                      {Array(12)
+                        .fill(null)
+                        .map((_, colIndex) => (
+                          <td key={`empty-cell-${rowIndex}-${colIndex}`}>
+                            &nbsp;
+                          </td>
+                        ))}
                     </tr>
                   ))}
             </>
