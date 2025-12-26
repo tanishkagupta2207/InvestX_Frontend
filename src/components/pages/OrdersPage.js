@@ -32,6 +32,8 @@ const OrderPage = (props) => {
     showTimeInForceFilterDropdown,
     showStatusFilterDropdown,
     fetchOrderData,
+    searchQuery,
+    setSearchQuery
   } = useOrderLogic(props);
 
   return (
@@ -47,11 +49,43 @@ const OrderPage = (props) => {
         >
           <div className="card bg-dark border-secondary">
             <div className="card-body text-light">
-              <h4 className="card-title text-center">ORDERS OVERVIEW</h4>
-              <p className="text-muted" style={{ margin: "0px" }}>
-                Click on any row to view full order details.
-              </p>
               
+              {/* HEADER SECTION - NOW CONTAINS SEARCH BAR */}
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                  {/* Left Side: Title & Description */}
+                  <div>
+                    <h4 className="card-title mb-1">ORDERS OVERVIEW</h4>
+                    <p className="text-muted small mb-0">
+                        Click on any row to view full order details.
+                    </p>
+                  </div>
+
+                  {/* Right Side: Search Bar (Narrower width) */}
+                  <div style={{ width: "300px" }}> 
+                    <div className="input-group input-group-sm"> {/* Added input-group-sm for compacter look */}
+                        <span className="input-group-text bg-black border-secondary text-secondary">
+                            <i className="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input 
+                            type="text" 
+                            className="form-control bg-black text-light border-secondary" 
+                            placeholder="Search orders..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button 
+                                className="btn btn-outline-secondary border-start-0 bg-black" 
+                                onClick={() => setSearchQuery("")}
+                                type="button"
+                            >
+                                <i className="fa-solid fa-xmark"></i>
+                            </button>
+                        )}
+                    </div>
+                  </div>
+              </div>
+
               <OrderTable
                 // Data
                 sortedOrderData={sortedOrderData}
@@ -85,7 +119,7 @@ const OrderPage = (props) => {
             </div>
           </div>
         </div>
-        {/* Render the modal component */}
+        
         {showDetailsModal && (
           <OrderDetailsModal order={selectedOrder} onClose={handleModalClose} showAlert={props.showAlert} onOrderUpdate={fetchOrderData} />
         )}
