@@ -1,31 +1,30 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { Pie, Bar } from "react-chartjs-2";
 import { HiOutlineCurrencyRupee } from "react-icons/hi2";
+import { FaSort, FaSortUp, FaSortDown, FaSearch } from "react-icons/fa";
 
 const MutualFundHoldingsAnalysis = (props) => {
   const portfolioData = props.portfolioData;
   const availableColors = props.availableColors;
-  const minRows = 5; // Minimum rows to display in the table
-  const dataRows = portfolioData.mutualFunds?.length || 0;
-  const rowsToDisplay = Math.max(minRows, dataRows);
+  const minRows = 5;
 
   // --- State Variables ---
-
   const [totalValue, setTotalValue] = useState(0);
   const [fundLabels, setFundLabels] = useState([]);
   const [fundValues, setFundValues] = useState([]);
-  const [individualProfitPercentages, setIndividualProfitPercentages] =
-    useState([]);
+  const [individualProfitPercentages, setIndividualProfitPercentages] = useState([]);
   const [backgroundColors, setBackgroundColors] = useState([]);
   const [totalProfit, setTotalProfit] = useState(0);
 
-  // --- Calculation Functions ---
+  // --- Sorting & Filtering State ---
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
 
+  // --- 1. Global Chart Calculations ---
   const calculateTotal = useCallback((funds) => {
     let total = 0;
     if (funds && Array.isArray(funds)) {
       funds.forEach((fund) => {
-        // Use current_price (NAV)
         total += fund.quantity * fund.current_price;
       });
     }
@@ -36,14 +35,11 @@ const MutualFundHoldingsAnalysis = (props) => {
     let total = 0;
     if (funds && Array.isArray(funds)) {
       funds.forEach((fund) => {
-        // Use current_price and average_price
         total += (fund.current_price - fund.average_price) * fund.quantity;
       });
     }
     return parseFloat(total.toFixed(2));
   }, []);
-
-  // --- useEffect for Data Processing ---
 
   useEffect(() => {
     if (portfolioData && portfolioData.mutualFunds) {
@@ -52,9 +48,9 @@ const MutualFundHoldingsAnalysis = (props) => {
       const newFundValues = funds.map(
         (fund) => fund.quantity * fund.current_price
       );
-      // Calculate Total Profit
+      
       const newTotalProfit = calculateTotalProfit(funds);
-      // Calculate Individual Fund Percentage Return on Investment
+      
       const newIndividualProfitPercentages = funds.map((fund) => {
         const investmentValue = fund.average_price * fund.quantity;
         const currentProfit =
@@ -63,6 +59,7 @@ const MutualFundHoldingsAnalysis = (props) => {
           investmentValue === 0 ? 0 : (currentProfit / investmentValue) * 100;
         return parseFloat(percentageReturn.toFixed(2));
       });
+
       const newBackgroundColors = newFundLabels.map(
         (_, index) => availableColors[index % availableColors.length]
       );
@@ -76,66 +73,92 @@ const MutualFundHoldingsAnalysis = (props) => {
     }
   }, [portfolioData, availableColors, calculateTotal, calculateTotalProfit]);
 
-  // --- Chart Data Structure ---
+  // --- 2. Data Enrichment (Pre-calc for sorting) ---
+  const enrichedFunds = useMemo(() => {
+    if (!portfolioData || !portfolioData.mutualFunds) return [];
+    return portfolioData.mutualFunds.map(fund => {
+      const investmentValue = fund.average_price * fund.quantity;
+      const currentValue = fund.current_price * fund.quantity;
+      const profitValue = currentValue - investmentValue;
+      const profitPercentage = investmentValue === 0 ? 0 : (profitValue / investmentValue) * 100;
+      
+      return {
+        ...fund,
+        investmentValue,
+        currentValue,
+        profitValue,
+        profitPercentage
+      };
+    });
+  }, [portfolioData]);
 
-  const dataFunds = {
-    labels: fundLabels,
-    datasets: [
-      {
-        label: "Mutual Fund Allocation",
-        data: fundValues,
-        backgroundColor: backgroundColors,
-        borderWidth: 1,
-      },
-    ],
+  // --- 3. Filtering ---
+  const filteredFunds = useMemo(() => {
+    return enrichedFunds.filter(fund => 
+      fund.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [enrichedFunds, searchTerm]);
+
+  // --- 4. Sorting ---
+  const sortedFunds = useMemo(() => {
+    let sortableItems = [...filteredFunds];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        if (typeof aValue === 'string') {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+        }
+
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredFunds, sortConfig]);
+
+  // --- 5. Handlers ---
+  const requestSort = (key) => {
+    let direction = 'ascending';
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
   };
 
-  const dataProfitPercentage = {
-    labels: fundLabels,
-    datasets: [
-      {
-        label: "Individual Fund Percentage Return (%)",
-        data: individualProfitPercentages,
-        backgroundColor: backgroundColors,
-        borderWidth: 1,
-      },
-    ],
+  const getSortIcon = (name) => {
+    if (sortConfig.key !== name) return <FaSort className="text-muted" style={{fontSize: '0.8rem'}} />;
+    if (sortConfig.direction === 'ascending') return <FaSortUp className="text-info" />;
+    return <FaSortDown className="text-info" />;
   };
 
-  // --- CSV Download Functionality ---
   const handleDownloadCSV = () => {
-    if (!portfolioData.mutualFunds || portfolioData.mutualFunds.length === 0) {
+    if (sortedFunds.length === 0) {
       alert("No data available to download.");
       return;
     }
 
-    // Removed Scheme Code from headers
     const headers = [
-      "Fund Name",
-      "Quantity",
-      "Average NAV",
-      "Current NAV",
-      "Value",
-      "Profit Value",
-      "Profit Percentage (ROI)",
+      "Fund Name", "Quantity", "Average NAV",
+      "Current NAV", "Value", "Profit Value", "Profit Percentage (ROI)",
     ];
 
-    const csvRows = portfolioData.mutualFunds.map((fund) => {
-      const fundValue = fund.quantity * fund.current_price;
-      const investmentValue = fund.quantity * fund.average_price;
-      const profitValue = fundValue - investmentValue;
-      const profitPercentage =
-        investmentValue === 0 ? 0 : (profitValue / investmentValue) * 100;
-
+    const csvRows = sortedFunds.map((fund) => {
       return [
-        `"${fund.name.replace(/"/g, '""')}"`, // Handle quotes
-        // fund.scheme_code || "N/A", // SCHEME CODE REMOVED
+        `"${fund.name.replace(/"/g, '""')}"`,
         fund.quantity,
         fund.average_price.toFixed(4),
         fund.current_price.toFixed(4),
-        fundValue.toFixed(2),
-        profitValue.toFixed(2),
-        profitPercentage.toFixed(2),
+        fund.currentValue.toFixed(2),
+        fund.profitValue.toFixed(2),
+        fund.profitPercentage.toFixed(2) + "%",
       ].join(",");
     });
 
@@ -151,77 +174,80 @@ const MutualFundHoldingsAnalysis = (props) => {
     props.showAlert("CSV downloaded successfully!", "success");
   };
 
+  // --- 6. Calculated Totals for Footer (View based) ---
+  const viewTotalProfit = sortedFunds.reduce((acc, curr) => acc + curr.profitValue, 0);
+  const viewTotalValue = sortedFunds.reduce((acc, curr) => acc + curr.currentValue, 0);
+
+  // --- Charts Config ---
+  const dataFunds = {
+    labels: fundLabels,
+    datasets: [{
+      label: "Mutual Fund Allocation",
+      data: fundValues,
+      backgroundColor: backgroundColors,
+      borderWidth: 1,
+    }],
+  };
+
+  const dataProfitPercentage = {
+    labels: fundLabels,
+    datasets: [{
+      label: "Individual Fund Percentage Return (%)",
+      data: individualProfitPercentages,
+      backgroundColor: backgroundColors,
+      borderWidth: 1,
+    }],
+  };
+
   const options = {
     responsive: true,
-    plugins: {
-      legend: {
-        position: "right",
-        labels: {
-          color: "white",
-        },
-      },
-    },
+    plugins: { legend: { position: "right", labels: { color: "white" } } },
   };
 
   const chartOptions = {
     scales: {
-      y: {
-        beginAtZero: false,
-        ticks: { color: "white" },
-        grid: { color: "rgba(255, 255, 255, 0.1)" },
-      },
-      x: {
-        ticks: { color: "white" },
-        grid: { color: "rgba(255, 255, 255, 0.1)" },
-      },
+      y: { beginAtZero: false, ticks: { color: "white" }, grid: { color: "rgba(255, 255, 255, 0.1)" } },
+      x: { ticks: { color: "white" }, grid: { color: "rgba(255, 255, 255, 0.1)" } },
     },
-    plugins: {
-      legend: {
-        labels: {
-          color: "white",
-        },
-      },
-    },
+    plugins: { legend: { labels: { color: "white" } } },
   };
 
-  if (!portfolioData || !portfolioData.mutualFunds) {
-    return null;
-  }
+  if (!portfolioData || !portfolioData.mutualFunds) return null;
+
+  // Helper for Headers
+  const SortableHeader = ({ label, sortKey, align = "left" }) => (
+    <th 
+      onClick={() => requestSort(sortKey)} 
+      style={{ cursor: 'pointer', textAlign: align, whiteSpace: 'nowrap' }}
+      className="user-select-none"
+    >
+      <div className={`d-flex align-items-center gap-1 justify-content-${align === 'right' ? 'end' : 'start'}`}>
+        {label} {getSortIcon(sortKey)}
+      </div>
+    </th>
+  );
 
   return (
     <div>
-      <h1
-        className="text-light"
-        style={{ textAlign: "center", marginBottom: "20px" }}
-      >
+      <h1 className="text-light" style={{ textAlign: "center", marginBottom: "20px" }}>
         Mutual Fund Holdings Analysis
       </h1>
+      
       {/* Charts section */}
-      <div
-        className="row g-3"
-        style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}
-      >
+      <div className="row g-3" style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}>
         <div className="col-lg-6">
           <div className="card bg-dark border-secondary">
             <div className="card-body text-light">
               <h4 className="card-title">Mutual Funds Breakdown</h4>
-              <div
-                className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded"
-                style={{ height: "372px" }}
-              >
-                {dataRows > 0 ? (
+              <div className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded" style={{ height: "372px" }}>
+                {portfolioData.mutualFunds.length > 0 ? (
                   <Pie data={dataFunds} options={options} />
                 ) : (
-                  <p className="text-muted">
-                    No mutual funds to display in chart.
-                  </p>
+                  <p className="text-muted">No mutual funds to display in chart.</p>
                 )}
               </div>
               <p className="text-muted">Pie Chart for Fund Distribution</p>
-              <h5>
-                Total Value of Funds: <HiOutlineCurrencyRupee />
-                {totalValue.toFixed(2)}
-              </h5>
+              <h5>Total Value of Funds: <HiOutlineCurrencyRupee /> {totalValue.toFixed(2)}</h5>
             </div>
           </div>
         </div>
@@ -229,141 +255,125 @@ const MutualFundHoldingsAnalysis = (props) => {
           <div className="card bg-dark border-secondary">
             <div className="card-body text-light">
               <h4 className="card-title">Individual Fund Percentage Return</h4>
-              <div
-                className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded"
-                style={{ height: "372px" }}
-              >
-                {dataRows > 0 ? (
+              <div className="d-flex justify-content-center align-items-center bg-secondary bg-opacity-10 rounded" style={{ height: "372px" }}>
+                {portfolioData.mutualFunds.length > 0 ? (
                   <Bar data={dataProfitPercentage} options={chartOptions} />
                 ) : (
                   <p className="text-muted">No funds to display in chart.</p>
                 )}
               </div>
-              <p className="text-muted">
-                Bar Chart for Individual Fund Return on Investment
-              </p>
-              <h5>
-                Total Profit/loss in Funds: <HiOutlineCurrencyRupee />
-                {totalProfit.toFixed(2)}
-              </h5>
+              <p className="text-muted">Bar Chart for Individual Fund Return on Investment</p>
+              <h5>Total Profit/loss in Funds: <HiOutlineCurrencyRupee /> {totalProfit.toFixed(2)}</h5>
             </div>
           </div>
         </div>
       </div>
-      <div>&nbsp;</div> {/* Detailed Table Section */}
-      <div
-        className="row g-3"
-        style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}
-      >
+      <div>&nbsp;</div> 
+
+      {/* Detailed Table Section */}
+      <div className="row g-3" style={{ margin: "0px", paddingLeft: "4px", paddingRight: "4px" }}>
         <div className="card bg-dark border-secondary">
-          <div className="card-header d-flex justify-content-between align-items-center">
-            <h4 className="card-title mb-0 text-light">
-              Detailed Mutual Fund Holdings Overview
-            </h4>
-            <button
-              className="btn btn-sm btn-outline-info"
-              onClick={handleDownloadCSV}
-            >
-              Download as CSV
-            </button>
+          
+          {/* Header & Controls */}
+          <div className="card-header">
+            <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <h4 className="card-title mb-0 text-light">Detailed Mutual Fund Holdings</h4>
+                
+                <div className="d-flex gap-2">
+                    {/* Search Bar */}
+                    <div className="input-group input-group-sm" style={{ width: '250px' }}>
+                        <span className="input-group-text bg-dark border-secondary text-light">
+                            <FaSearch />
+                        </span>
+                        <input
+                            type="text"
+                            className="form-control bg-dark border-secondary text-light"
+                            placeholder="Search Fund Name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <button className="btn btn-sm btn-outline-info" onClick={handleDownloadCSV}>
+                        Download CSV
+                    </button>
+                </div>
+            </div>
           </div>
+
           <div className="card-body text-light">
-            <div className="table-responsive" style={{ maxHeight: "388px" }}>
-              <table className="table table-striped table-dark table-bordered">
-                <thead>
+            <div className="table-responsive" style={{ maxHeight: "450px" }}>
+              <table className="table table-striped table-dark table-bordered table-hover">
+                <thead style={{ position: "sticky", top: 0, zIndex: 1, backgroundColor: "black" }}>
                   <tr>
-                    <th>Fund Name</th>
-                    {/* <th>Scheme Code</th> REMOVED */}
-                    <th>Quantity</th>
-                    <th>Average NAV</th>
-                    <th>Current NAV</th>
-                    <th>Value</th>
-                    <th>Profit Value</th>
-                    <th>Profit Percentage (ROI)</th>
+                    <SortableHeader label="Fund Name" sortKey="name" />
+                    <SortableHeader label="Qty" sortKey="quantity" align="center" />
+                    <SortableHeader label="Avg NAV" sortKey="average_price" align="right" />
+                    <SortableHeader label="Curr NAV" sortKey="current_price" align="right" />
+                    <SortableHeader label="Value" sortKey="currentValue" align="right" />
+                    <SortableHeader label="P/L" sortKey="profitValue" align="right" />
+                    <SortableHeader label="ROI (%)" sortKey="profitPercentage" align="right" />
                   </tr>
                 </thead>
-                <tbody>
-                  {portfolioData.mutualFunds?.map((fund, index) => {
-                    const fundValue = fund.quantity * fund.current_price;
-                    const investmentValue = fund.quantity * fund.average_price;
-                    const profitValue = fundValue - investmentValue;
-                    const profitPercentage =
-                      investmentValue === 0
-                        ? 0
-                        : (profitValue / investmentValue) * 100;
-                    const isPositive = profitValue >= 0;
+                <tbody className="table-group-divider">
+                  {sortedFunds.length > 0 ? (
+                    sortedFunds.map((fund, index) => {
+                      const isPositive = fund.profitValue >= 0;
 
-                    return (
-                      <tr key={fund.id || index}>
-                        <td>{fund.name}</td>
-                        {/* <td>{fund.scheme_code || "N/A"}</td> REMOVED */}
-                        <td>{fund.quantity}</td>
-                        <td>{fund.average_price.toFixed(4)}</td>
-                        <td>{fund.current_price.toFixed(4)}</td>
-                        <td>
-                          <HiOutlineCurrencyRupee size={16} />
-                          {fundValue.toFixed(2)}
+                      return (
+                        <tr key={fund.id || index}>
+                          <td>{fund.name}</td>
+                          <td className="text-center">{fund.quantity}</td>
+                          <td className="text-end">{fund.average_price.toFixed(4)}</td>
+                          <td className="text-end">{fund.current_price.toFixed(4)}</td>
+                          <td className="text-end">
+                            <HiOutlineCurrencyRupee size={16} />
+                            {fund.currentValue.toFixed(2)}
+                          </td>
+                          <td className={`text-end ${isPositive ? "text-success" : "text-danger"}`}>
+                            <HiOutlineCurrencyRupee size={16} />
+                            {fund.profitValue.toFixed(2)}
+                          </td>
+                          <td className={`text-end ${isPositive ? "text-success" : "text-danger"}`}>
+                            {fund.profitPercentage.toFixed(2)}%
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                     <tr>
+                        <td colSpan="7" className="text-center py-4 text-muted">
+                            No mutual funds found matching "{searchTerm}"
                         </td>
-                        <td
-                          className={`card-text ${
-                            isPositive ? "text-success" : "text-danger"
-                          }`}
-                        >
-                          <HiOutlineCurrencyRupee size={16} />
-                          {profitValue.toFixed(2)}
-                        </td>
-                        <td
-                          className={`card-text ${
-                            isPositive ? "text-success" : "text-danger"
-                          }`}
-                        >
-                          {profitPercentage.toFixed(2)} %
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {/* Padding rows to maintain height */}
-                  {[...Array(rowsToDisplay - dataRows)].map((_, index) => (
-                    <tr key={`pad-${index}`}>
-                      <td>&nbsp;</td>
-                      {/* <td>&nbsp;</td> REMOVED */}
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                      <td>&nbsp;</td>
-                    </tr>
-                  ))}
-                  {dataRows > 0 && (
-                    <tr>
-                      <td
-                        colSpan="4" // Adjusted colspan from 5 to 4
-                        style={{ textAlign: "right", fontWeight: "bold" }}
-                      >
-                        Total:
+                     </tr>
+                  )}
+                  
+                  {/* Empty rows filler */}
+                  {sortedFunds.length < minRows && sortedFunds.length > 0 &&
+                    Array(minRows - sortedFunds.length)
+                      .fill(null)
+                      .map((_, index) => (
+                        <tr key={`empty-${index}`}>
+                          <td colSpan="7">&nbsp;</td>
+                        </tr>
+                      ))}
+                  
+                  {/* Footer Row */}
+                  {sortedFunds.length > 0 && (
+                    <tr style={{ borderTop: '2px solid #6c757d' }}>
+                      <td colSpan="4" className="text-end fw-bold">
+                        {searchTerm ? "Filtered Total:" : "Total:"}
                       </td>
-                      <td style={{ fontWeight: "bold" }}>
+                      <td className="text-end fw-bold text-light">
                         <HiOutlineCurrencyRupee size={16} />
-                        {totalValue.toFixed(2)}
+                        {viewTotalValue.toFixed(2)}
                       </td>
-                      <td
-                        style={{ fontWeight: "bold" }}
-                        className={`card-text ${
-                          totalProfit >= 0 ? "text-success" : "text-danger"
-                        }`}
-                      >
+                      <td className={`text-end fw-bold ${viewTotalProfit >= 0 ? "text-success" : "text-danger"}`}>
                         <HiOutlineCurrencyRupee size={16} />
-                        {totalProfit.toFixed(2)}
+                        {viewTotalProfit.toFixed(2)}
                       </td>
-                      <td
-                        style={{ fontWeight: "bold" }}
-                        className={`card-text ${
-                          totalProfit >= 0 ? "text-success" : "text-danger"
-                        }`}
-                      >
-                        {/* Overall Portfolio ROI: (Total Profit / Total Investment) * 100 */}
-                        {((totalProfit / (totalValue - totalProfit)) * 100).toFixed(2)}%
+                      <td className={`text-end fw-bold ${viewTotalProfit >= 0 ? "text-success" : "text-danger"}`}>
+                        {viewTotalValue > 0 ? ((viewTotalProfit / (viewTotalValue - viewTotalProfit)) * 100).toFixed(2) : "0.00"}%
                       </td>
                     </tr>
                   )}

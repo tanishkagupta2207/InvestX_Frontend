@@ -3,12 +3,13 @@ import { Link, NavLink } from 'react-router-dom';
 import {
   IoHomeOutline,
   IoTicketOutline,
-  IoPeopleOutline,
-  IoNotificationsOutline,
   IoPersonOutline,
   IoLogOutOutline,
-  IoMenuOutline, // New icon for mobile toggle
-  IoCloseOutline // New icon for closing mobile menu
+  IoMenuOutline, 
+  IoCloseOutline,
+  IoListOutline,
+  IoCashOutline,
+  IoChatbox
 } from 'react-icons/io5'; 
 import { AiOutlineStock } from 'react-icons/ai';
 import { MdAccountBalance } from "react-icons/md";
@@ -21,7 +22,6 @@ const SIDEBAR_WIDTH = '280px';
 const ACCENT_COLOR = 'rgb(9, 96, 29)';
 
 const SideBar = () => {
-  const unreadNotifications = 10;
   const [userInfo, setUserInfo] = useState(null);
   
   // State to handle the visibility/collapsed state, primarily for small screens
@@ -124,24 +124,14 @@ const SideBar = () => {
                       <IoTicketOutline className="me-2" /> Orders
                   </NavLink>
                   <NavLink className="nav-link link-light d-flex align-items-center" to="/transactions" onClick={handleLinkClick}>
-                      <IoPeopleOutline className="me-2" /> Transactions
+                      <IoCashOutline className="me-2" /> Transactions
                   </NavLink>
                   <NavLink className="nav-link link-light d-flex align-items-center" to="/watchList" onClick={handleLinkClick}>
-                      <IoPeopleOutline className="me-2" /> Watchlist
+                      <IoListOutline className="me-2" /> Watchlist
                   </NavLink>
-
-                  <button
-                      className="nav-link text-light d-flex align-items-center text-start position-relative"
-                      onClick={handleLinkClick} // Close after click (even if it's a button)
-                      aria-label="Notifications"
-                  >
-                      <IoNotificationsOutline className="me-2" />
-                      Notifications
-                      <span className="position-absolute top-50 start-100 translate-middle badge rounded-pill bg-primary border border-light" style={{ transform: 'translate(5px, -50%)' }}>
-                          {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                          <span className="visually-hidden">unread messages</span>
-                      </span>
-                  </button>
+                  <NavLink className="nav-link link-light d-flex align-items-center" to="/chat" onClick={handleLinkClick}>
+                      <IoChatbox className="me-2" /> Chat
+                  </NavLink>
               </nav>
 
               <div className="mt-auto d-flex flex-column gap-2">

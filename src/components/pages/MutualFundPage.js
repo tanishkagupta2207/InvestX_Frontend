@@ -1,23 +1,28 @@
 import React, { useState, useEffect, useCallback } from "react";
 import SideBar from "../SideBar";
 import MutualFundChartWrapper from "./tradePageComponents/MutualFundChartWrapper"; 
+import { FaSearch, FaTimes } from "react-icons/fa"; 
 
 const SIDEBAR_WIDTH = "280px";
 const LG_BREAKPOINT = 992;
 const CATEGORY_TABS_BREAKPOINT = 768;
 
 function MutualFundPage(props) {
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    return localStorage.getItem("selectedMFCategory") || "";
+  });
+
   const [fundsToDisplay, setFundsToDisplay] = useState([]);
   const [categoriesData, setCategoriesData] = useState({});
   const [categoryNames, setCategoryNames] = useState([]);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const isMobileView = windowWidth < CATEGORY_TABS_BREAKPOINT;
 
-  // --- Fetch Categories ---
+  // --- 1. Fetch Categories & INJECT Category Name ---
   const fetchCategoriesData = async () => {
     try {
-      // Changed endpoint to /api/mutualfund/categories
       const response = await fetch(
         `${process.env.REACT_APP_HOST_URL}api/mutualfund/categories`,
         {
@@ -30,11 +35,22 @@ function MutualFundPage(props) {
       );
       const res = await response.json();
       if (res.success) {
-        setCategoriesData(res.data);
-        const names = Object.keys(res.data);
+        
+        // *** FIX START: Inject 'category' into the fund objects ***
+        const rawData = res.data;
+        Object.keys(rawData).forEach(catKey => {
+            rawData[catKey] = rawData[catKey].map(fund => ({
+                ...fund,
+                category: catKey // Add the category key (e.g., "Large_Cap") to the object
+            }));
+        });
+        // *** FIX END ***
+
+        setCategoriesData(rawData);
+        const names = Object.keys(rawData);
         setCategoryNames(names);
-        // Select first category by default if available
-        if (!names.includes(selectedCategory) && names.length > 0) {
+        
+        if (names.length > 0 && (!selectedCategory || !names.includes(selectedCategory))) {
             setSelectedCategory(names[0]);
         }
       } else {
@@ -63,21 +79,48 @@ function MutualFundPage(props) {
 
   useEffect(() => {
     if (selectedCategory) {
+      localStorage.setItem("selectedMFCategory", selectedCategory);
+    }
+  }, [selectedCategory]);
+
+  // --- 5. LOGIC: Determine Funds to Display ---
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+        const query = searchQuery.toLowerCase();
+        // Flatten all categories
+        const allFunds = Object.values(categoriesData).flat();
+        
+        const filteredFunds = allFunds.filter(fund => 
+            fund.name.toLowerCase().includes(query) || 
+            (fund.fund_house && fund.fund_house.toLowerCase().includes(query))
+        );
+        setFundsToDisplay(filteredFunds);
+    } 
+    else if (selectedCategory) {
       setFundsToDisplay(categoriesData[selectedCategory] || []);
     } else {
       setFundsToDisplay([]);
     }
-  }, [selectedCategory, categoriesData]);
+  }, [selectedCategory, categoriesData, searchQuery]);
 
   const handleCategorySelect = useCallback((category) => {
     setSelectedCategory(category);
+    setSearchQuery(""); 
   }, []);
   
   const handleDropdownChange = useCallback((event) => {
     setSelectedCategory(event.target.value);
+    setSearchQuery(""); 
   }, []);
 
-  // --- Styling Constants ---
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+  };
+
   const mainContentMarginLeft = windowWidth >= LG_BREAKPOINT ? SIDEBAR_WIDTH : '0';
   const mainContentStyle = {
     marginLeft: mainContentMarginLeft,
@@ -91,12 +134,12 @@ function MutualFundPage(props) {
   const BORDER_COLOR = '#363636';
 
   const tabStyle = (category) => ({
-      backgroundColor: selectedCategory === category ? ACTIVE_TAB_BG : 'transparent', 
-      color: selectedCategory === category ? 'white' : INACTIVE_TEXT_COLOR, 
+      backgroundColor: selectedCategory === category && searchQuery === "" ? ACTIVE_TAB_BG : 'transparent', 
+      color: selectedCategory === category && searchQuery === "" ? 'white' : INACTIVE_TEXT_COLOR, 
       borderWidth: '1px', 
       borderStyle: 'solid',
       borderColor: BORDER_COLOR, 
-      borderBottom: selectedCategory === category ? 'none' : `1px solid ${BORDER_COLOR}`, 
+      borderBottom: selectedCategory === category && searchQuery === "" ? 'none' : `1px solid ${BORDER_COLOR}`, 
       borderRadius: '5px 5px 0 0',
       padding: '0.5rem 1rem',
       transition: 'all 0.15s ease-in-out',
@@ -104,9 +147,7 @@ function MutualFundPage(props) {
       textAlign: 'center',
   });
 
-  // --- Navigation UI ---
   const CategoryNavigation = () => {
-    // If many categories, you might want to slice differently or use a scrollable container
     const firstRow = categoryNames.slice(0, 5);
     const secondRow = categoryNames.slice(5);
 
@@ -117,10 +158,11 @@ function MutualFundPage(props) {
             className="form-select form-select-lg bg-dark text-white border-secondary"
             value={selectedCategory}
             onChange={handleDropdownChange}
+            disabled={searchQuery.length > 0}
           >
             {categoryNames.map((category) => (
               <option key={category} value={category}>
-                {category}
+                {category.replace(/_/g, " ")}
               </option>
             ))}
           </select>
@@ -135,11 +177,11 @@ function MutualFundPage(props) {
             {firstRow.map((category) => (
               <li className="nav-item" key={category}>
                 <button
-                  className={`nav-link ${selectedCategory === category ? 'active' : ''}`}
+                  className={`nav-link ${selectedCategory === category && searchQuery === "" ? 'active' : ''}`}
                   onClick={() => handleCategorySelect(category)}
                   style={tabStyle(category)}
                 >
-                  {category.replace(/_/g, " ")} {/* Beautify category names (e.g., Large_Cap -> Large Cap) */}
+                  {category.replace(/_/g, " ")}
                 </button>
               </li>
             ))}
@@ -151,7 +193,7 @@ function MutualFundPage(props) {
                     {secondRow.map((category) => (
                         <li className="nav-item" key={category}>
                             <button
-                                className={`nav-link ${selectedCategory === category ? 'active' : ''}`}
+                                className={`nav-link ${selectedCategory === category && searchQuery === "" ? 'active' : ''}`}
                                 onClick={() => handleCategorySelect(category)}
                                 style={tabStyle(category)}
                             >
@@ -173,33 +215,68 @@ function MutualFundPage(props) {
         <h1 className="text-center text-white mb-3">Mutual Funds Dashboard</h1>
 
         <div className="mb-4 p-3 bg-dark rounded border border-secondary">
+          <div className="mb-4">
+            <div className="input-group input-group-lg">
+                <span className="input-group-text bg-dark border-secondary text-secondary">
+                    <FaSearch />
+                </span>
+                <input 
+                    type="text" 
+                    className="form-control bg-dark text-white border-secondary" 
+                    placeholder="Search Funds by Name or Fund House..." 
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                />
+                {searchQuery && (
+                    <button 
+                        className="btn btn-outline-secondary border-secondary" 
+                        onClick={clearSearch}
+                        type="button"
+                    >
+                        <FaTimes />
+                    </button>
+                )}
+            </div>
+          </div>
+
           <h3 className="text-white mb-3">Select Category:</h3>
-          {CategoryNavigation()}
+          <div style={{ opacity: searchQuery ? 0.5 : 1, pointerEvents: searchQuery ? 'none' : 'auto' }}>
+             {CategoryNavigation()}
+          </div>
         </div>
 
-        {selectedCategory && (
-          <h2 className="text-white mt-4 mb-3">{`${selectedCategory.replace(/_/g, " ")} Funds`}</h2>
-        )}
+        <h2 className="text-white mt-4 mb-3">
+            {searchQuery 
+                ? `Search Results for "${searchQuery}"` 
+                : (selectedCategory ? `${selectedCategory.replace(/_/g, " ")} Funds` : "Select a Category")}
+        </h2>
         
         <div className="row">
-          {fundsToDisplay.length > 0
-            ? fundsToDisplay.map((fund) => (
-                <MutualFundChartWrapper
-                  key={fund.security_id}
-                  fundName={fund.name}
-                  fundHouse={fund.fund_house} // Mutual funds usually have a Fund House
-                  security_id={fund.security_id}
-                  showAlert={props.showAlert}
-                />
-              ))
-            : selectedCategory && (
-                <div className="col-12">
-                  <div className="alert alert-info">
-                    No mutual funds found for this category.
-                  </div>
-                </div>
-              )}
-          {!selectedCategory && (
+          {fundsToDisplay.length > 0 ? (
+            fundsToDisplay.map((fund) => (
+              <MutualFundChartWrapper
+                key={fund.security_id}
+                fundName={fund.name}
+                fundHouse={fund.fund_house}
+                
+                // *** FIX: Pass the injected category prop here ***
+                category={fund.category} 
+                
+                security_id={fund.security_id}
+                showAlert={props.showAlert}
+              />
+            ))
+          ) : (
+            <div className="col-12">
+              <div className="alert alert-info">
+                {searchQuery 
+                    ? `No mutual funds found matching "${searchQuery}".`
+                    : "No mutual funds found for this category."}
+              </div>
+            </div>
+          )}
+          
+          {!selectedCategory && !searchQuery && (
             <div className="col-12">
               <div className="alert alert-secondary">
                 Please select a category to view mutual funds.

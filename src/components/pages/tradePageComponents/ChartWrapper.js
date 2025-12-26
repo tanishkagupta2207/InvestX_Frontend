@@ -50,7 +50,7 @@ const useIntersectionObserver = (options) => {
   return [containerRef, isVisible];
 };
 
-const ChartWrapper = ({ stockSymbol, stockName, security_id, showAlert }) => {
+const ChartWrapper = ({ stockSymbol, stockName, sector, security_id, showAlert }) => {
   const navigate = useNavigate();
   
   // Ref for Lazy Loading
@@ -180,23 +180,34 @@ const ChartWrapper = ({ stockSymbol, stockName, security_id, showAlert }) => {
     navigate("/trade/action", { state: { security: company, action } });
   };
 
+  
+  const displaySector = sector ? sector.replace(/_/g, " ") : "";
+
   return (
     <div className="col-12 mb-4" ref={containerRef} style={{ minHeight: "450px" }}> 
       <div className="card bg-dark border-secondary h-100">
         <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
           {/* Header & Watchlist Button */}
-          <div className="d-flex align-items-center gap-2">
-            <h5 className="mb-0 text-white">
-              {stockName} ({stockSymbol})
-            </h5>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-info"
-              onClick={handleShowModal}
-              disabled={isLoading}
-            >
-              + Watchlist
-            </button>
+          <div className="d-flex flex-column" style={{ maxWidth: '60%' }}>
+            <div className="d-flex align-items-center gap-2">
+                <h5 className="mb-0 text-white text-truncate">
+                {stockName} ({stockSymbol})
+                </h5>
+                <button
+                type="button"
+                className="btn btn-sm btn-outline-info"
+                onClick={handleShowModal}
+                disabled={isLoading}
+                >
+                + Watchlist
+                </button>
+            </div>
+            {/* Added Sector Display here */}
+            {displaySector && (
+                <small className="text-muted mt-1">
+                    Sector: {displaySector}
+                </small>
+            )}
           </div>
 
           {/* Status message */}

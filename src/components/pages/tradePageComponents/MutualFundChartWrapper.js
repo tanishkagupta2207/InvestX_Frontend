@@ -50,7 +50,7 @@ const useIntersectionObserver = (options) => {
   return [containerRef, isVisible];
 };
 
-const MutualFundChartWrapper = ({ fundName, fundHouse, security_id, showAlert }) => {
+const MutualFundChartWrapper = ({ fundName, fundHouse, category, security_id, showAlert }) => {
   const navigate = useNavigate();
   
   // Ref for Lazy Loading
@@ -169,24 +169,31 @@ const MutualFundChartWrapper = ({ fundName, fundHouse, security_id, showAlert })
     });
   };
 
+  const displayCategory = category ? category.replace(/_/g, " ") : "";
+
   return (
     <div className="col-12 mb-4" ref={containerRef} style={{ minHeight: "450px" }}> 
       <div className="card bg-dark border-secondary h-100">
         <div className="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
           {/* Header */}
-          <div className="d-flex align-items-center gap-2" style={{ maxWidth: '60%' }}>
-            <h5 className="mb-0 text-white text-truncate" title={fundName}>
-              {fundName}
-            </h5>
-            <small className="text-muted d-none d-md-inline">({fundHouse})</small>
-             <button
-              type="button"
-              className="btn btn-sm btn-outline-info"
-              onClick={handleShowModal}
-              disabled={isLoading}
-            >
-              + Watchlist
-            </button>
+          <div className="d-flex flex-column" style={{ maxWidth: '60%' }}>
+            <div className="d-flex align-items-center gap-2">
+                <h5 className="mb-0 text-white text-truncate" title={fundName}>
+                {fundName}
+                </h5>
+                <button
+                type="button"
+                className="btn btn-sm btn-outline-info"
+                onClick={handleShowModal}
+                disabled={isLoading}
+                >
+                + Watchlist
+                </button>
+            </div>
+            {/* Added Category Display here */}
+            <small className="text-muted mt-1">
+                {fundHouse} {displayCategory && ` • ${displayCategory}`}
+            </small>
           </div>
 
           {/* Status message */}

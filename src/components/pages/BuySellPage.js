@@ -95,8 +95,8 @@ function MutualFundTradeForm({ action, fund, showAlert }) {
       const res = await response.json();
       if (res.success) {
         showAlert(res.msg || "Order Placed successfully", "success");
-        // --- Navigation Logic: Go back to Mutual Funds Dashboard ---
-        navigate("/mutualfunds"); 
+        // --- Navigation Logic: Go to orders page ---
+        navigate("/orders"); 
       } else {
         showAlert(res.msg || "An error occurred", "danger");
       }
@@ -382,8 +382,8 @@ function StockTradeForm({ action, security, showAlert }) {
         const res = await response.json();
         if (res.success) {
           showAlert("Order Placed successfully", "success");
-          // --- Navigation Logic: Go back to Stocks Dashboard ---
-          navigate("/stocks"); 
+          // --- Navigation Logic: Go to Orders Page ---
+          navigate("/orders"); 
         } else {
           console.error(`Error placing order ${res.msg || res.errors[0]?.msg}`);
           showAlert(
